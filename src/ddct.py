@@ -69,7 +69,8 @@ def main(args):
     sf("CONFIG")
     client_check(config)
     connection_check(config)
-    check_drivers(config)
+    if not args.no_drivers:
+        check_drivers(config)
     gen_report()
 
 
@@ -80,6 +81,8 @@ if __name__ == "__main__":
                         help="Generate config file example")
     parser.add_argument("-c", "--config-file",
                         help="Config file location")
+    parser.add_argument("-n", "--no-drivers",
+                        help="Disable driver checks")
     args = parser.parse_args()
 
     sys.exit(main(args))
