@@ -39,7 +39,40 @@ Usage
 -----
 
 To perform basic readiness checks:
-$ ./ddct
+
+```
+# Clone the repository
+$ git clone http://github.com/Datera/ddct
+$ cd ddct
+
+# Create workspace
+$ virtualenv .ddct
+$ source .ddct/bin/activate
+
+# Install requirements
+$ pip install -r requirements.txt
+
+# Generate config file
+$ ./ddct -g
+
+# Edit config file.  Replace the IP addresses and credentials with those of
+# your Datera EDF cluster
+$ vi ddct.json
+{
+    "cinder-volume": {
+        "location": null,
+        "version": "v2.7.2"
+    },
+    "mgmt_ip": "172.19.1.41",
+    "password": "password",
+    "username": "admin",
+    "vip1_ip": "172.28.41.9",
+    "vip2_ip": "172.29.41.9"
+}
+
+# Finally, run the tool
+$ ./ddct.py -c ddct.json
+```
 
 The report will have the following format:
 
