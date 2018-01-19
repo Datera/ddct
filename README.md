@@ -43,12 +43,15 @@ $ ./ddct
 
 The report will have the following format:
 
+```
 +-------+--------+---------+
 | Test  | Status | Reasons |
 +=======+========+=========+
+```
 
 Below is an example output.  Tests with multiple failure conditions will have
 all currently check-able reasons listed.
+```
 +---------------+----------+-------------------------------------------------------+
 | Test          | Status   | Reasons                                               |
 +===============+==========+=======================================================+
@@ -75,5 +78,6 @@ all currently check-able reasons listed.
 +---------------+----------+-------------------------------------------------------+
 | Cinder Volume | Success  |                                                       |
 +---------------+----------+-------------------------------------------------------+
+```
 
 The tool should be run until all checks show "Success"
