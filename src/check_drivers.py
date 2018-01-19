@@ -230,6 +230,7 @@ def check_cinder_volume_driver(config):
     pass_check = False
     vbn_check = False
     debug_check = False
+    defaults_check = False
 
     ip = config['mgmt_ip']
     user = config['username']
@@ -246,6 +247,8 @@ def check_cinder_volume_driver(config):
             vbn_check = True
         if 'datera_debug' in line and 'True' in line:
             debug_check = True
+        if 'datera_volume_type_defaults' in line:
+            defaults_check = True
 
     if not san_check:
         ff(name, "san_ip line is missing or not matching ip address:"
@@ -260,5 +263,8 @@ def check_cinder_volume_driver(config):
         ff(name, "volume_backend_name is not set")
     if not debug_check:
         wf(name, "datera_debug is not enabled")
+    if not defaults_check:
+        wf(name, "datera_volume_type_defaults is not set, consider setting "
+                 "minimum QoS values here")
 
     sf(name)
