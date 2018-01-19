@@ -2,78 +2,8 @@
 
 from __future__ import (print_function, unicode_literals, division,
                         absolute_import)
-
 """
-Datera Deployment Check Tool (DDCT)
-
-Openstack cinder controller level:
-
-Driver check:
-
-Is the latest running?
-
-Auto update?
-
-Is cinder backup setup, if not suggest they get the driver :)
-
-
-OpenStack Datera types created?
-
-Given the backend name, are types created?
-
-
-Host level stuff:
-
-Is ARP setup correctly?
-
-#sysctl
-
-#check /etc/sysctl.conf
-
-Settings:
-
-net.ipv4.conf.all.arp_announce = 2
-
-net.ipv4.conf.all.arp_ignore = 1
-
-
-
-Is irqbalance running?
-
-#Stop irqbalanace if running
-
-#service irqbalance stop
-#Recommend rebalancing IRQ for Network interface based on NIC vendor tools.
-
-
-Is cpufreq set to performance?
-
-NOTE: this is OS dependent:
-https://www.google.com/search?q=linux+cpufreq+howto&oq=linux+cpufreq&aqs=chrome.4.69i57j0l5.6655j0j7&sourceid=chrome&ie=UTF-8,
-need Debian / Ubuntu and RedHat / Centos.
-
-
-Block devices set to NOOP?
-
-Check /sys/block/*/device/scheduler
-
-NOTE:
-http://www.techrepublic.com/article/how-to-change-the-linux-io-scheduler-to-fit-your-needs/
-
-
-
-Multipath.conf setting and nova.conf check:
-
-#If They want to use Multipath.conf this is needed.
-
-https://drive.google.com/drive/u/1/folders/0B7eQy3YWSJolYnFQYVJnYzc2cWs
-
-Check Page 11 here.  Ideally we could have a reference multipath.conf file
-that checks the local multipath.conf file
-
-
-If this tool can be used out side of OpenStack environments to validate
-best practices that would be even better!!
+Datera Deployment Check Tool
 """
 
 import argparse
