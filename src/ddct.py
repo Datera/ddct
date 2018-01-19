@@ -82,5 +82,4 @@ if __name__ == "__main__":
                         help="Config file location")
     args = parser.parse_args()
 
-    common.verbose = args.verbose
     sys.exit(main(args))
