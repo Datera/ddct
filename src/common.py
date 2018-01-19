@@ -28,9 +28,12 @@ class Report(object):
         self.failure.append((name, reason))
 
     def generate(self):
-        s = list(map(lambda x: (x, "Success", ""), self.success))
-        w = list(map(lambda x: (x[0], "WARN", x[1]), self.warning))
-        f = list(map(lambda x: (x[0], "FAIL", x[1]), self.failure))
+        s = list(map(lambda x: (
+            x, apply_color("Success", color="green"), ""), self.success))
+        w = list(map(lambda x: (
+            x[0], apply_color("WARN", color="yellow"), x[1]), self.warning))
+        f = list(map(lambda x: (
+            x[0], apply_color("FAIL", color="red"), x[1]), self.failure))
         result = tabulate(
             f + w + s,
             headers=["Test", "Status", "Reasons"],
@@ -39,6 +42,19 @@ class Report(object):
 
 
 report = Report()
+
+
+def apply_color(value_for_coloring=None, color=None):
+    suffix = "\x1b[0m"
+    if color == "red":
+        prefix = "\x1b[31m"
+    elif color == "green":
+        prefix = "\x1b[32m"
+    elif color == "yellow":
+        prefix = "\x1b[33m"
+    elif color == "cyan":
+        prefix = "\x1b[36m"
+    return "{}{}{}".format(prefix, value_for_coloring, suffix)
 
 
 # Success Func
