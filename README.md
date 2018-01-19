@@ -9,10 +9,6 @@ This tool is designed to be run on customer systems as an easy way to determine
 if they are currently configured correctly (by the standards of the tool) for
 starting a set of PoC tests.
 
-Once the set of checks has been run a report file will be generated.  This
-report file can then be fed back into the tool to have it try and fix each
-encountered problem.
-
 ------
 Checks
 ------
@@ -33,6 +29,12 @@ Future Checks
 * Nova Ephemeral Driver
 * Docker Driver
 * Kubernetes Driver
+
+
+-----
+Fixes
+-----
+TBD
 
 -----
 Usage
