@@ -43,17 +43,17 @@ To perform basic readiness checks:
 ```
 # Clone the repository
 $ git clone http://github.com/Datera/ddct
-$ cd ddct
+$ cd ddct/src
 
 # Create workspace
 $ virtualenv .ddct
 $ source .ddct/bin/activate
 
 # Install requirements
-$ pip install -r requirements.txt
+$ pip install -r ../requirements.txt
 
 # Generate config file
-$ ./ddct -g
+$ ./ddct.py -g
 
 # Edit config file.  Replace the IP addresses and credentials with those of
 # your Datera EDF cluster
