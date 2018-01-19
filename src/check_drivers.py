@@ -86,7 +86,7 @@ def detect_service_restart_cmd(service, display=False):
         "".format(service))
     if service in result:
         return "sudo service {} restart".format(result.strip())
-    result = exe("sudo systemctl --all 2>&1 | awk '{{print $1}}' | grep {} || "
+    result = exe("sudo sysctl --all 2>&1 | awk '{{print $1}}' | grep {} || "
                  "true".format(service))
     if service in result:
         return "sudo service {} restart".format(

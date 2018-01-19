@@ -111,10 +111,16 @@ def fix_arp(*args, **kwargs):
 
 def check_irq():
     vprint("Checking irqbalance settings, (should be turned off)")
-    if not exe_check("systemctl status irqbalance | "
-                     "grep 'Active: active'",
-                     err=True):
-        return ff("IRQ", "irqbalance is active")
+    if not exe_check("which systemctl"):
+        if not exe_check("service irqbalance status | "
+                         "grep 'Active: active'",
+                         err=True):
+            return ff("IRQ", "irqbalance is active")
+    else:
+        if not exe_check("systemctl status irqbalance | "
+                         "grep 'Active: active'",
+                         err=True):
+            return ff("IRQ", "irqbalance is active")
     return sf("IRQ")
 
 
@@ -208,9 +214,14 @@ def check_multipath():
     mfile = "/etc/multipath.conf"
     if not os.path.exists(mfile):
         return ff(name, "multipath.conf file not found")
-    if not exe_check("systemctl status multipathd | grep Active: active",
-                     err=False):
-        return ff(name, "multipathd not enabled")
+    if not exe_check("which systemctl"):
+        if not exe_check("service multipathd status | grep Active: active",
+                         err=False):
+            return ff(name, "multipathd not enabled")
+    else:
+        if not exe_check("systemctl status multipathd | grep Active: active",
+                         err=False):
+            return ff(name, "multipathd not enabled")
     return sf(name)
 
 
