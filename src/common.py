@@ -3,37 +3,46 @@ from __future__ import (print_function, unicode_literals, division,
 
 import subprocess
 
-from tabulate import tabulate
+try:
+    from tabulate import tabulate
+except ImportError:
+    tabulate = None
 
 VERBOSE = False
-SUCCESS = "{} : Success"
-WARNING = "{} : WARN --"
-FAILURE = "{} : FAIL --"
+WARNINGS = True
 
 
 class Report(object):
 
     def __init__(self):
         self.success = []
-        self.warning = []
-        self.failure = []
+        self.warning = {}
+        self.failure = {}
 
     def add_success(self, name):
-        self.success.append(name)
+        if name not in self.failure and name not in self.warning:
+            self.success.append(name)
 
     def add_warning(self, name, reason):
-        self.warning.append((name, reason))
+        if WARNINGS:
+            if name not in self.warning:
+                self.warning[name] = []
+            self.warning[name].append(reason)
 
     def add_failure(self, name, reason):
-        self.failure.append((name, reason))
+        if name not in self.failure:
+            self.failure[name] = []
+        self.failure[name].append(reason)
 
     def generate(self):
         s = list(map(lambda x: (
             x, apply_color("Success", color="green"), ""), self.success))
         w = list(map(lambda x: (
-            x[0], apply_color("WARN", color="yellow"), x[1]), self.warning))
+            x[0], apply_color("WARN", color="yellow"), "\n".join(x[1])),
+            self.warning.items()))
         f = list(map(lambda x: (
-            x[0], apply_color("FAIL", color="red"), x[1]), self.failure))
+            x[0], apply_color("FAIL", color="red"), "\n".join(x[1])),
+            self.failure.items()))
         result = tabulate(
             f + w + s,
             headers=["Test", "Status", "Reasons"],
@@ -83,7 +92,6 @@ def gen_report():
 
 
 def vprint(*args, **kwargs):
-    global VERBOSE
     if VERBOSE:
         print(*args, **kwargs)
 

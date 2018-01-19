@@ -14,7 +14,7 @@ import sys
 
 
 import common
-from common import SUCCESS, ff, sf, gen_report
+from common import ff, sf, gen_report
 from validators import client_check, connection_check
 from check_drivers import check_drivers
 
@@ -46,9 +46,14 @@ def generate_config_file():
 
 def main(args):
     # Generate or load config file
+    common.VERBOSE = args.verbose
+    common.WARNINGS = not args.disable_warnings
+    if not common.tabulate:
+        print("Please install requirements listed in requirements.txt")
+        sys.exit(1)
     if args.generate_config_file:
         generate_config_file()
-        return SUCCESS
+        return 0
     elif args.config_file:
         if not os.path.exists(args.config_file):
             raise EnvironmentError(
@@ -83,6 +88,9 @@ if __name__ == "__main__":
                         help="Config file location")
     parser.add_argument("-n", "--no-drivers", action="store_true",
                         help="Disable driver checks")
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="Enables verbose output")
+    parser.add_argument("-w", "--disable-warnings", action="store_true",
+                        help="Disables showing warnings in output")
     args = parser.parse_args()
-
     sys.exit(main(args))

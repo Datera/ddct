@@ -8,7 +8,7 @@ import os
 import shutil
 import uuid
 
-from common import vprint, exe, exe_check, SUCCESS, ff, sf
+from common import vprint, exe, exe_check, ff, sf
 
 # Using string REPLACEME instead of normal string formatting because it's
 # easier than escaping everything
@@ -86,27 +86,22 @@ def check_os():
 
 def check_arp():
     vprint("Checking ARP settings")
-    results = []
-    first = exe_check("sysctl --all 2>/dev/null | "
-                      "grep 'net.ipv4.conf.all.arp_announce = 2'",
-                      err=False)
-    second = exe_check("sysctl --all 2>/dev/null | "
-                       "grep 'net.ipv4.conf.all.arp_ignore = 1'",
-                       err=False)
-    if not first:
-        results.append("net.ipv4.conf.all.arp_announce != 2 in sysctl")
-    if not second:
-        results.append("net.ipv4.conf.all.arp_ignore != 1 in sysctl")
-    if results:
-        return ff("ARP", results)
-    return sf("ARP")
+    name = "ARP"
+    if not exe_check("sysctl --all 2>/dev/null | "
+                     "grep 'net.ipv4.conf.all.arp_announce = 2'",
+                     err=False):
+        ff(name, "net.ipv4.conf.all.arp_announce != 2 in sysctl")
+    if not exe_check("sysctl --all 2>/dev/null | "
+                     "grep 'net.ipv4.conf.all.arp_ignore = 1'",
+                     err=False):
+        ff(name, "net.ipv4.conf.all.arp_ignore != 1 in sysctl")
+    sf("ARP")
 
 
 def fix_arp(*args, **kwargs):
     vprint("Fixing ARP settings")
     exe("sysctl -w net.ipv4.conf.all.arp_announce=2")
     exe("sysctl -w net.ipv4.conf.all.arp_ignore=1")
-    return SUCCESS
 
 
 def check_irq():
@@ -121,13 +116,12 @@ def check_irq():
                          "grep 'Active: active'",
                          err=True):
             return ff("IRQ", "irqbalance is active")
-    return sf("IRQ")
+    sf("IRQ")
 
 
 def fix_irq(*args, **kwargs):
     vprint("Stopping irqbalance service")
     exe("service irqbalance stop")
-    return SUCCESS
 
 
 def check_cpufreq():
@@ -142,7 +136,7 @@ def check_cpufreq():
             "No 'performance' governor found for system.  If this is a VM,"
             " governors might not be available and this check should be"
             " disabled")
-    return sf("CPUFREQ")
+    sf("CPUFREQ")
 
 
 def fix_cpufreq(*args, **kwargs):
@@ -165,7 +159,6 @@ def fix_cpufreq(*args, **kwargs):
         exe("systemctl daemon-reload")
     # Remove ondemand rc.d files
     exe("rm -f /etc/rc?.d/*ondemand")
-    return SUCCESS
 
 
 def check_block_devices():
@@ -179,7 +172,7 @@ def check_block_devices():
             return ff(name, "Grub file appears non-standard")
         if "elevator=noop" not in line:
             return ff(name, "Scheduler is not set to noop")
-    return sf(name)
+    sf(name)
 
 
 def fix_block_devices(*args, **kwargs):
@@ -202,7 +195,6 @@ def fix_block_devices(*args, **kwargs):
         exe("update-grub2")
     elif kwargs["os_version"] == "centos":
         exe("grub2-mkconfig -o /boot/grub2/grub.cfg")
-    return SUCCESS
 
 
 def check_multipath():
@@ -222,7 +214,7 @@ def check_multipath():
         if not exe_check("systemctl status multipathd | grep Active: active",
                          err=False):
             return ff(name, "multipathd not enabled")
-    return sf(name)
+    sf(name)
 
 
 def fix_multipath(*args, **kwargs):
@@ -251,7 +243,6 @@ def fix_multipath(*args, **kwargs):
     elif kwargs["os_version"] == "centos":
         exe("systemctl start multipathd")
         exe("systemctl enable multipathd")
-    return SUCCESS
 
 
 def client_check(config):

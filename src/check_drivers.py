@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import uuid
 
-from common import vprint, exe, exe_check, ff, sf
+from common import vprint, exe, exe_check, ff, sf, wf
 
 REQUIREMENTS = ('git', 'curl')
 GITHUB = "http://github.com/Datera/cinder-driver"
@@ -200,16 +200,20 @@ def check_cinder_volume_driver(config):
             if default:
                 break
         if not default:
-            return ff(name, "[DEFAULT] section missing from "
-                            "/etc/cinder/cinder.conf")
+            ff(name, "[DEFAULT] section missing from "
+                     "/etc/cinder/cinder.conf")
         for line in f:
             section = ETC_SECTION_RE.match(line)
             if section:
                 break
             if line.startswith("enabled_backends"):
                 if "datera" not in line:
-                    return ff(name, "datera is not set under enabled_backends "
-                                    "in /etc/cinder/cinder.conf")
+                    ff(name, "datera is not set under enabled_backends "
+                             "in /etc/cinder/cinder.conf")
+            if line.startswith("default_volume_type"):
+                if "datera" not in line:
+                    wf(name, "datera is not set as default_volume_type in"
+                             " /etc/cinder/cinder.conf")
 
         if not section:
             return ff(name, "[datera] section missing from "
@@ -243,21 +247,18 @@ def check_cinder_volume_driver(config):
         if 'datera_debug' in line and 'True' in line:
             debug_check = True
 
-    etc_checks = []
     if not san_check:
-        etc_checks.append("san_ip line is missing or not matching ip address:"
-                          " {}".format(ip))
+        ff(name, "san_ip line is missing or not matching ip address:"
+                 " {}".format(ip))
     if not user_check:
-        etc_checks.append("san_login line is missing or not matching username:"
-                          " {}".format(user))
+        ff(name, "san_login line is missing or not matching username:"
+                 " {}".format(user))
     if not pass_check:
-        etc_checks.append("san_password line is missing or not matching "
-                          "password: {}".format(passwd))
+        ff(name, "san_password line is missing or not matching "
+                 "password: {}".format(passwd))
     if not vbn_check:
-        etc_checks.append("volume_backend_name is not set")
+        ff(name, "volume_backend_name is not set")
     if not debug_check:
-        etc_checks.append("datera_debug is not enabled")
+        wf(name, "datera_debug is not enabled")
 
-    if not all((san_check, user_check, pass_check, vbn_check, debug_check)):
-        return ff(name, etc_checks)
-    return sf(name)
+    sf(name)
