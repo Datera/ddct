@@ -81,7 +81,7 @@ if __name__ == "__main__":
                         help="Generate config file example")
     parser.add_argument("-c", "--config-file",
                         help="Config file location")
-    parser.add_argument("-n", "--no-drivers",
+    parser.add_argument("-n", "--no-drivers", action="store_true",
                         help="Disable driver checks")
     args = parser.parse_args()
 
