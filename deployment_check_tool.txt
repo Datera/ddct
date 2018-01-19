@@ -1,0 +1,60 @@
+#############################################
+## The Datera Deployment Check Tool (DDCT) ##
+#############################################
+
+-------
+Purpose
+-------
+This tool is designed to be run on customer systems as an easy way to determine
+if they are currently configured correctly (by the standards of the tool) for
+starting a set of PoC tests.
+
+Once the set of checks has been run a report file will be generated.  This
+report file can then be fed back into the tool to have it try and fix each
+encountered problem.
+
+------
+Checks
+------
+
+* ARP
+* IRQ
+* CPU Frequency
+* Block Devices
+* Multipath
+* Cinder Volume Driver
+
+-------------
+Future Checks
+-------------
+
+* Cinder Backup Driver
+* Glance Image Backend Driver
+* Nova Ephemeral Driver
+* Docker Driver
+* Kubernetes Driver
+
+-----
+Usage
+-----
+
+To perform basic readiness checks:
+$ ./ddct
+
+This will create a file ddct-$hostname-report-$timestamp.tx
+So for example, a host tlx200 will generate a report
+ddct-tlx200-report-1516126441.txt
+
+The report will have the following format:
+
+CHECK_1: Success
+CHECK_2: FAIL -- reason
+CHECK_3: FAIL -- reason
+CHECK_4: Success
+
+An example output would be:
+
+OS: Success
+ARP: Success
+IRQ: Failure -- irqbalance is active
+VIP_1_PING: Failure -- could not ping 10.1.2.41
