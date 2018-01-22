@@ -1,6 +1,7 @@
 from __future__ import (print_function, unicode_literals, division,
                         absolute_import)
 
+import io
 import subprocess
 
 try:
@@ -123,8 +124,14 @@ def wf(name, reasons, uid):
     report.add_warning(name, "\n".join(reasons), uid)
 
 
-def gen_report():
-    print(report.generate())
+def gen_report(outfile=None, quiet=False):
+    results = report.generate()
+    if outfile:
+        with io.open(outfile, 'w+') as f:
+            f.write(results)
+            f.write("\n")
+    if not quiet:
+        print(results)
 
 
 def vprint(*args, **kwargs):

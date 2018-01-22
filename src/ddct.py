@@ -86,7 +86,7 @@ def main(args):
     connection_check(config)
     if not args.no_drivers:
         check_drivers(config)
-    gen_report()
+    gen_report(outfile=args.out, quiet=args.quiet)
 
 
 if __name__ == "__main__":
@@ -102,6 +102,11 @@ if __name__ == "__main__":
                         help="Enables verbose output")
     parser.add_argument("-w", "--disable-warnings", action="store_true",
                         help="Disables showing warnings in output")
+    parser.add_argument("-o", "--out", help="Output file.  Will still print "
+                                            "to stdout unless -q option is "
+                                            "provided")
+    parser.add_argument("-q", "--quiet", action="store_true",
+                        help="No output to stdout")
     parser.add_argument("--version", action="store_true",
                         help="Print DDCT version")
     args = parser.parse_args()
