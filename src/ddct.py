@@ -52,12 +52,15 @@ def generate_config_file():
 
 
 def main(args):
-    # Generate or load config file
+    if args.version:
+        print("Datera Deployment Check Tool (DDCT) version: ", VERSION)
+        sys.exit(0)
     common.VERBOSE = args.verbose
     common.WARNINGS = not args.disable_warnings
     if not common.tabulate:
         print("Please install requirements listed in requirements.txt")
         sys.exit(1)
+    # Generate or load config file
     if args.generate_config_file:
         generate_config_file()
         return 0
@@ -99,5 +102,7 @@ if __name__ == "__main__":
                         help="Enables verbose output")
     parser.add_argument("-w", "--disable-warnings", action="store_true",
                         help="Disables showing warnings in output")
+    parser.add_argument("--version", action="store_true",
+                        help="Print DDCT version")
     args = parser.parse_args()
     sys.exit(main(args))
