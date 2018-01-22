@@ -14,7 +14,7 @@ import sys
 
 
 import common
-from common import ff, sf, gen_report
+from common import ff, sf, gen_report, read_report
 from validators import client_check, connection_check
 from check_drivers import check_drivers
 
@@ -82,6 +82,11 @@ def main(args):
         return ff("CONFIG", "Missing config file")
 
     sf("CONFIG")
+
+    if args.in_report:
+        print(read_report(args.in_report).generate())
+        sys.exit(0)
+
     client_check(config)
     connection_check(config)
     if not args.no_drivers:
@@ -107,6 +112,8 @@ if __name__ == "__main__":
                                             "provided")
     parser.add_argument("-q", "--quiet", action="store_true",
                         help="No output to stdout")
+    parser.add_argument("-i", "--in-report", help="Report file location to "
+                                                  "read in")
     parser.add_argument("--version", action="store_true",
                         help="Print DDCT version")
     args = parser.parse_args()

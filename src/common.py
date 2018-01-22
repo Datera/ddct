@@ -9,8 +9,26 @@ try:
 except ImportError:
     tabulate = None
 
+
+def apply_color(value_for_coloring=None, color=None):
+    suffix = "\x1b[0m"
+    if color == "red":
+        prefix = "\x1b[31m"
+    elif color == "green":
+        prefix = "\x1b[32m"
+    elif color == "yellow":
+        prefix = "\x1b[33m"
+    elif color == "cyan":
+        prefix = "\x1b[36m"
+    return "{}{}{}".format(prefix, value_for_coloring, suffix)
+
+
 VERBOSE = False
 WARNINGS = True
+
+SUCCESS = apply_color("Success", color="green")
+FAILURE = apply_color("FAIL", color="red")
+WARNING = apply_color("WARN", color="yellow")
 
 
 class Report(object):
@@ -46,20 +64,19 @@ class Report(object):
         self.failure_by_id[uid] = (name, reason)
 
     def generate(self):
-        s = list(map(lambda x: (
-            x, apply_color("Success", color="green"), ""), self.success))
+        s = list(map(lambda x: (x, SUCCESS, ""), sorted(self.success)))
         w = list(map(lambda x: (
             x[0],
-            apply_color("WARN", color="yellow"),
+            WARNING,
             "\n".join(x[1]),
             "\n".join(self.warning_id[x[0]])),
-            self.warning.items()))
+            sorted(self.warning.items())))
         f = list(map(lambda x: (
             x[0],
-            apply_color("FAIL", color="red"),
+            FAILURE,
             "\n".join(x[1]),
             "\n".join(self.failure_id[x[0]])),
-            self.failure.items()))
+            sorted(self.failure.items())))
         result = tabulate(
             f + w + s,
             headers=["Test", "Status", "Reasons", "IDs"],
@@ -88,19 +105,6 @@ def parse_mconf(data):
         return result
 
     return _helper(iter(data.splitlines()))
-
-
-def apply_color(value_for_coloring=None, color=None):
-    suffix = "\x1b[0m"
-    if color == "red":
-        prefix = "\x1b[31m"
-    elif color == "green":
-        prefix = "\x1b[32m"
-    elif color == "yellow":
-        prefix = "\x1b[33m"
-    elif color == "cyan":
-        prefix = "\x1b[36m"
-    return "{}{}{}".format(prefix, value_for_coloring, suffix)
 
 
 # Success Func
@@ -132,6 +136,34 @@ def gen_report(outfile=None, quiet=False):
             f.write("\n")
     if not quiet:
         print(results)
+
+
+def read_report(infile):
+    in_report = Report()
+    with io.open(infile, 'r') as f:
+        header_skip = True
+        prevr = None
+        prevt = None
+        for line in f:
+            if "|" not in line:
+                continue
+            elif header_skip:
+                header_skip = False
+                continue
+            test, result, reason, uid = list(
+                map(lambda x: x.strip(), line.split("|")))[1:-1]
+            if result == "":
+                result = prevr
+                test = prevt
+            if result == FAILURE:
+                in_report.add_failure(test, reason, uid)
+            elif result == WARNING:
+                in_report.add_warning(test, reason, uid)
+            elif result == SUCCESS:
+                in_report.add_success(test)
+            prevr = result
+            prevt = test
+    return in_report
 
 
 def vprint(*args, **kwargs):
