@@ -18,6 +18,13 @@ from common import ff, sf, gen_report
 from validators import client_check, connection_check
 from check_drivers import check_drivers
 
+VERSION = "v1.0.1"
+
+VERSION_HISTORY = """
+    v1.0.0 -- Initial version
+    v1.0.1 -- Additional multipath.conf checks, Check IDs, tool versioning
+"""
+
 
 CONFIG = {"mgmt_ip": "1.1.1.1",
           "vip1_ip": "10.0.1.1",

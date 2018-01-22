@@ -17,40 +17,76 @@ class Report(object):
     def __init__(self):
         self.success = []
         self.warning = {}
+        self.warning_id = {}
+        self.warning_by_id = {}
         self.failure = {}
+        self.failure_id = {}
+        self.failure_by_id = {}
 
     def add_success(self, name):
         if name not in self.failure and name not in self.warning:
             self.success.append(name)
 
-    def add_warning(self, name, reason):
+    def add_warning(self, name, reason, uid):
         if WARNINGS:
             if name not in self.warning:
                 self.warning[name] = []
+                self.warning_id[name] = []
             self.warning[name].append(reason)
+            self.warning_id[name].append(uid)
+            self.warning_by_id[uid] = (name, reason)
 
-    def add_failure(self, name, reason):
+    def add_failure(self, name, reason, uid):
         if name not in self.failure:
             self.failure[name] = []
+            self.failure_id[name] = []
         self.failure[name].append(reason)
+        self.failure_id[name].append(uid)
+        self.failure_by_id[uid] = (name, reason)
 
     def generate(self):
         s = list(map(lambda x: (
             x, apply_color("Success", color="green"), ""), self.success))
         w = list(map(lambda x: (
-            x[0], apply_color("WARN", color="yellow"), "\n".join(x[1])),
+            x[0],
+            apply_color("WARN", color="yellow"),
+            "\n".join(x[1]),
+            "\n".join(self.warning_id[x[0]])),
             self.warning.items()))
         f = list(map(lambda x: (
-            x[0], apply_color("FAIL", color="red"), "\n".join(x[1])),
+            x[0],
+            apply_color("FAIL", color="red"),
+            "\n".join(x[1]),
+            "\n".join(self.failure_id[x[0]])),
             self.failure.items()))
         result = tabulate(
             f + w + s,
-            headers=["Test", "Status", "Reasons"],
+            headers=["Test", "Status", "Reasons", "IDs"],
             tablefmt="grid")
         return result
 
 
 report = Report()
+
+
+def parse_mconf(data):
+
+    def _helper(lines):
+        result = []
+        for line in lines:
+            line = line.strip()
+            line = line.split()
+            if not line or len(line) < 1 or line[0].startswith("#"):
+                continue
+            elif line[-1] == "{":
+                result.append([line[0], _helper(lines)])
+                continue
+            elif line[-1] == "}":
+                break
+            result.append([line[0], " ".join(line[1:]).strip("\"'")])
+        return result
+
+    return _helper(iter(data.splitlines()))
 
 
 def apply_color(value_for_coloring=None, color=None):
@@ -72,19 +108,19 @@ def sf(name):
 
 
 # Fail Func
-def ff(name, reasons):
+def ff(name, reasons, uid):
     if type(reasons) not in (list, tuple):
-        report.add_failure(name, reasons)
+        report.add_failure(name, reasons, uid)
         return
-    report.add_failure(name, "\n".join(reasons))
+    report.add_failure(name, "\n".join(reasons), uid)
 
 
 # Warn Func
-def wf(name, reasons):
+def wf(name, reasons, uid):
     if type(reasons) not in (list, tuple):
-        report.add_warning(name, reasons)
+        report.add_warning(name, reasons, uid)
         return
-    report.add_warning(name, "\n".join(reasons))
+    report.add_warning(name, "\n".join(reasons), uid)
 
 
 def gen_report():
