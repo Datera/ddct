@@ -8,7 +8,7 @@ import os
 import shutil
 import uuid
 
-from common import vprint, exe, exe_check, ff, sf
+from common import vprint, exe, exe_check, ff, sf, parse_mconf
 
 # Using string REPLACEME instead of normal string formatting because it's
 # easier than escaping everything
@@ -26,8 +26,8 @@ devices {
 
     product "IBLOCK"
 
-    getuid_callout "/lib/udev/scsi_id --whitelisted --replace-
-    whitespace --page=0x80 --device=/dev/%n"
+    getuid_callout "/lib/udev/scsi_id --whitelisted --replace- whitespace"""\
+"""--page=0x80 --device=/dev/%n"
 
     path_grouping_policy group_by_prio
 
@@ -201,19 +201,82 @@ def check_multipath():
     name = "Multipath"
     vprint("Checking multipath settings")
     if not exe_check("which multipath", err=False):
-        return ff(name,
-                  "Multipath binary could not be found, is it installed?")
-    mfile = "/etc/multipath.conf"
-    if not os.path.exists(mfile):
-        return ff(name, "multipath.conf file not found")
+        ff(name, "Multipath binary could not be found, is it installed?")
     if not exe_check("which systemctl"):
         if not exe_check("service multipathd status | grep Active: active",
                          err=False):
-            return ff(name, "multipathd not enabled")
+            ff(name, "multipathd not enabled")
     else:
         if not exe_check("systemctl status multipathd | grep Active: active",
                          err=False):
-            return ff(name, "multipathd not enabled")
+            ff(name, "multipathd not enabled")
+
+
+def check_multipath_conf():
+    name = "Multipath Conf"
+    mfile = "/etc/multipath.conf"
+    if not os.path.exists(mfile):
+        ff(name, "/etc/multipath.conf file not found")
+    with io.open(mfile, 'r') as f:
+        mconf = parse_mconf(f)
+
+    # Check defaults section
+    defaults = filter(lambda x: x[0] == 'defaults', mconf)
+    if not defaults:
+        return ff(name, "defaults section not found")
+
+    defaults = defaults[0]
+    if get_os() == "ubuntu":
+        ct = False
+        for d in defaults[1]:
+            if 'checker_timer' in d:
+                ct = True
+        if not ct:
+            ff(name, "defaults section missing 'checker_timer'")
+    else:
+        ct = False
+        for d in defaults[1]:
+            if 'checker_timeout' in d:
+                ct = True
+        if not ct:
+            ff(name, "defaults section missing 'checker_timeout'")
+
+    # Check devices section
+    devices = filter(lambda x: x[0] == 'devices', mconf)
+    if not devices:
+        return ff(name, "Missing devices section")
+    devices = devices[0][1]
+    dat_block = None
+    for _, device in devices:
+        ddict = {}
+        for entry in device:
+            ddict[entry[0]] = entry[1]
+        if ddict['vendor'] == 'DATERA':
+            dat_block = ddict
+    if not dat_block:
+        return ff(name, "No DATERA device section found")
+
+    if not dat_block['product'] == "IBLOCK":
+        ff(name, "Datera 'product' entry should be \"IBLOCK\"")
+
+    # Blacklist exceptions
+    be = filter(lambda x: x[0] == 'blacklist_exceptions', mconf)
+    if not be:
+        ff(name, "Missing blacklist_exceptions section")
+    be = be[0][1]
+    dat_block = None
+    for _, device in be:
+        bdict = {}
+        for entry in device:
+            bdict[entry[0]] = entry[1]
+        if bdict['vendor'] == 'DATERA.*':
+            dat_block = bdict
+    if not dat_block:
+        ff(name, "No Datera blacklist_exceptions section found")
+    if dat_block['vendor'] != 'DATERA.*':
+        ff(name, "Datera blacklist_exceptions vendor entry malformed")
+    if dat_block['product'] != 'IBLOCK.*':
+        ff(name, "Datera blacklist_exceptions product entry malformed")
     sf(name)
 
 
