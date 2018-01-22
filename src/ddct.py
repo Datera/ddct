@@ -23,6 +23,7 @@ VERSION = "v1.0.1"
 VERSION_HISTORY = """
     v1.0.0 -- Initial version
     v1.0.1 -- Additional multipath.conf checks, Check IDs, tool versioning
+    v1.0.2 -- Added report reading and file output
 """
 
 
