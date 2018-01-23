@@ -138,9 +138,9 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--run-fixes", action="store_true",
                         help="Run fixes based on codes in provided report or "
                         "via manually specified codes")
-    parser.add_argument("-d", "--codes", help="Used for specifying codes "
-                                              "manually when used with the -f "
-                                              "flag")
+    parser.add_argument("-d", "--codes", nargs="*",
+                        help="Used for specifying codes manually when used "
+                             "with the -f flag")
     parser.add_argument("-p", "--print-fixes", action="store_true",
                         help="Print out the tool's currently supported fixes "
                              "and codes")
