@@ -1,6 +1,7 @@
 from __future__ import (print_function, unicode_literals, division,
                         absolute_import)
 
+import functools
 import io
 import subprocess
 
@@ -83,8 +84,28 @@ class Report(object):
             tablefmt="grid")
         return result
 
+    def code_list(self):
+        result = []
+        if WARNINGS:
+            result.extend(self.warning_by_id.keys())
+        result.extend(self.failure_by_id.keys())
+        return result
+
 
 report = Report()
+func_run = set()
+
+
+def idempotent(func):
+    if func.__name__ in func_run:
+        return
+    func_run.add(func.__name__)
+
+    @functools.wraps(func)
+    def _wrapper():
+        func()
+
+    return _wrapper
 
 
 def parse_mconf(data):
@@ -105,6 +126,13 @@ def parse_mconf(data):
         return result
 
     return _helper(iter(data.splitlines()))
+
+
+def get_os():
+    if exe_check("which apt-get", err=False):
+        return "ubuntu"
+    if exe_check("which yum", err=False):
+        return "centos"
 
 
 # Success Func

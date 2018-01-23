@@ -17,13 +17,15 @@ import common
 from common import ff, sf, gen_report, read_report
 from validators import client_check, connection_check
 from check_drivers import check_drivers
+from fixers import run_fixes, print_fixes
 
-VERSION = "v1.0.1"
+VERSION = "v1.1.0"
 
 VERSION_HISTORY = """
     v1.0.0 -- Initial version
     v1.0.1 -- Additional multipath.conf checks, Check IDs, tool versioning
     v1.0.2 -- Added report reading and file output
+    v1.1.0 -- Adding support for running fixes based on report codes
 """
 
 
@@ -84,9 +86,27 @@ def main(args):
 
     sf("CONFIG")
 
-    if args.in_report:
-        print(read_report(args.in_report).generate())
+    ran_fixes = False
+    if args.print_fixes:
+        print_fixes()
         sys.exit(0)
+
+    if args.in_report:
+        report = read_report(args.in_report)
+        if args.run_fixes:
+            run_fixes(report.code_list())
+            ran_fixes = True
+        else:
+            print(report.generate())
+            sys.exit(0)
+    elif args.codes and args.run_fixes:
+        run_fixes(args.codes)
+        ran_fixes = True
+
+    if ran_fixes:
+        print("Running post-fix checks")
+    else:
+        print("Running checks")
 
     client_check(config)
     connection_check(config)
@@ -115,6 +135,15 @@ if __name__ == "__main__":
                         help="No output to stdout")
     parser.add_argument("-i", "--in-report", help="Report file location to "
                                                   "read in")
+    parser.add_argument("-f", "--run-fixes", action="store_true",
+                        help="Run fixes based on codes in provided report or "
+                        "via manually specified codes")
+    parser.add_argument("-d", "--codes", help="Used for specifying codes "
+                                              "manually when used with the -f "
+                                              "flag")
+    parser.add_argument("-p", "--print-fixes", action="store_true",
+                        help="Print out the tool's currently supported fixes "
+                             "and codes")
     parser.add_argument("--version", action="store_true",
                         help="Print DDCT version")
     args = parser.parse_args()
