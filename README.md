@@ -149,3 +149,145 @@ Each fix will only be run one time per tool invocation.  This ensures that
 fixes can be written in a non-idempotent style.
 
 The tool should be run until all checks show "Success"
+
+---------------
+Writing Plugins
+---------------
+
+Creating a plugin for ddct is a straightforward process and can be accomplished
+via the following steps:
+
+* First, determine what the plugin should be called.  For the following
+  example, we're going to use the plugin name "my_driver"
+* The name you chose determines the name of the two files than need to be
+  created under src/plugins, a check file (check_my_driver.py) and a fix file
+  (fix_my_driver.py)
+* The Check file will always have the format "check_$(your_name).py"
+* The Fix file will always have the format "fix_$(your_name).py"
+* Once we've placed these two files under src/plugins, add the following
+  template to the check file (check_my_driver.py)
+```python
+from __future__ import (print_function, unicode_literals, division,
+                        absolute_import)
+
+from common import vprint, exe_check, ff, sf, wf
+
+def run_checks(config):
+    pass
+```
+
+* Add the next template to the fix file (fix_my_driver.py)
+```python
+from __future__ import (print_function, unicode_literals, division,
+                        absolute_import)
+from common import vprint, exe
+
+def load_fixes():
+    return {}
+```
+
+All checks your plugin should run should be called by the "run_checks" function.
+The function has takes a "config" parameter which will be the contents of the
+ddct config an example of which can be seen here:
+```json
+{
+    "cinder-volume": {
+        "location": null,
+        "version": "v2.7.2"
+    },
+    "mgmt_ip": "172.19.1.41",
+    "password": "password",
+    "username": "admin",
+    "vip1_ip": "172.28.41.9",
+    "vip2_ip": "172.29.41.9"
+}
+```
+
+When writing a check, the following functions should be used to denote success,
+warning and failure and are imported from common:
+
+Success: sf(test_name)
+Warning: wf(test_name, reason, id)
+Failure: ff(test_name, reason, id)
+
+Where "test_name" is the category of the test, for example ARP, "reason" is the
+human readable reason for test failure (or warning) and "id" is the manually
+created unique ID for the failure.
+
+IDs can be created by taking the first section of a UUID4 ID and uppercasing it.
+In python this can be accomplished via
+```python
+import uuid
+
+print(str(uuid.uuid4()).split(-)[0])
+```
+I've also created a handy VIM shortcut for this:
+```viml
+nnoremap <Leader>u mm:r!uuidgen\|cut -c 1-8<CR>dW"_dd`mi""<Esc>hp
+```
+
+These IDs should never be changed after creation (other than check deletion)
+as they are used for determining the series of fixes needed.
+
+Below is an example test case:
+
+```python
+def my_plugin_tests():
+    name = "MY TESTS"
+    if not exe_check("which ping", err=False):
+        return ff(name, "Couldn't find ping", "95C9B3AC")
+    sf(name)
+```
+
+This would be shown in the report as the following line:
+```
++----------+------+----------------------+----------+
+| MY TESTS | FAIL | Couldn't find ping   | 95C9B3AC |
++----------+------+----------------------+----------+
+```
+
+When writing fixes, we associate the test ID with a fix.  Below is an example
+of a fix and the entry it makes in "load_fixes()":
+```python
+def my_ping_fix(config):
+    vprint("Fixing missing ping")
+    exe("do stuff")
+
+def load_fixes():
+    return {"95C9B3AC": [my_ping_fix]}
+```
+
+If the above was a multi-step fix (with independent steps) you could do the
+following:
+```python
+def my_ping_fix_1(config):
+    vprint("Fixing missing ping")
+    exe("do stuff")
+
+def my_ping_fix_2(config):
+    vprint("Trying another thing to fix ping")
+    exe("do other stuff")
+
+def load_fixes():
+    return {"95C9B3AC": [my_ping_fix_1, my_ping_fix_2]}
+```
+
+Each fix function will be executed in order.  Fix functions can have either no
+arguments, or accept "config" as the sole argument
+
+If you have a check that has no viable fix, you can put it in the fix file
+and import a function from common called "no_fix" like the example below:
+```python
+def load_fixes():
+    return {"95C9B3AC": [my_ping_fix_1, my_ping_fix_2],
+            "8A28D615": [no_fix]}
+```
+
+This allows the print_fixes function to show in the output that this code has
+no fix.
+
+Now that we're all done with "my_driver" checks and fixes, we can load them
+via the following:
+```bash
+$ ./ddct.py -c ddct.json --use-plugin my_driver
+```
