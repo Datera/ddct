@@ -3,8 +3,9 @@ from __future__ import (print_function, unicode_literals, division,
 
 import io
 import os
+import sys
 
-from common import vprint, exe_check, ff, sf, parse_mconf, get_os
+from common import vprint, exe_check, ff, sf, parse_mconf, get_os, load_plugins
 
 
 def check_os():
@@ -62,11 +63,11 @@ def check_block_devices():
     name = "Block Devices"
     grub = "/etc/default/grub"
     with io.open(grub, "r") as f:
-        line = filter(lambda x: x.startswith("GRUB_CMDLINE_LINUX="),
+        line = filter(lambda x: x.startswith("GRUB_CMDLINE_LINUX_DEFAULT="),
                       f.readlines())
         if len(line) != 1:
             return ff(name, "Grub file appears non-standard", "A65B6D97")
-        if "elevator=noop" not in line:
+        if "elevator=noop" not in line[0]:
             return ff(name, "Scheduler is not set to noop", "47BB5083")
     sf(name)
 
@@ -166,15 +167,15 @@ def check_multipath_conf():
 
 def client_check(config):
 
-    checks = [check_os,
-              check_arp,
-              check_irq,
-              check_cpufreq,
-              check_block_devices,
-              check_multipath,
-              check_multipath_conf]
+    cchecks = [check_os,
+               check_arp,
+               check_irq,
+               check_cpufreq,
+               check_block_devices,
+               check_multipath,
+               check_multipath_conf]
 
-    list(map(lambda x: x(), checks))
+    list(map(lambda x: x(), cchecks))
 
 
 def connection_check(config):
@@ -193,3 +194,23 @@ def connection_check(config):
         ff("VIP2", "Could not ping vip2 ip {}".format(vip2), "3D76CE5A")
     elif vip2:
         sf("VIP2")
+
+check_list = [client_check,
+              connection_check]
+
+
+def load_plugin_checks(plugins):
+    plugs = load_plugins(".*check_(.*)\.py", "check_*.py")
+    for plugin in plugins:
+        if plugin not in plugs:
+            print("Unrecognized check plugin requested:", plugin)
+            print("Available check plugins:", ", ".join(plugs.keys()))
+            sys.exit(1)
+        check_list.append(plugs[plugin].run_checks)
+
+
+def run_checks(config, plugins=None):
+    if plugins:
+        load_plugin_checks(plugins)
+    for check in check_list:
+        check(config)

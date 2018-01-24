@@ -1,21 +1,13 @@
-#!/usr/bin/env python
-
 from __future__ import (print_function, unicode_literals, division,
                         absolute_import)
 
 import io
 import os
 import re
-import shutil
 import subprocess
-import uuid
 
-from common import vprint, exe, exe_check, ff, sf, wf
+from common import vprint, exe, ff, sf, wf
 
-REQUIREMENTS = ('git', 'curl')
-GITHUB = "http://github.com/Datera/cinder-driver"
-HOME = os.path.expanduser("~")
-REPO = "{}/cinder-driver".format(HOME)
 ETC = "/etc/cinder/cinder.conf"
 PACKAGE_INSTALL = "/usr/lib/python2.7/dist-packages/cinder"
 SITE_PACKAGE_INSTALL = "/usr/lib/python2.7/site-packages/cinder"
@@ -25,24 +17,6 @@ VERSION_RE = re.compile("^\s+VERSION = ['\"]([\d\.]+)['\"]\s*$")
 
 ETC_DEFAULT_RE = re.compile("^\[DEFAULT\]\s*$")
 ETC_SECTION_RE = re.compile("^\[[Dd]atera\]\s*$")
-ETC_TEMPLATE = """
-[datera]
-volume_driver = cinder.volume.drivers.datera.datera_iscsi.DateraDriver
-san_is_local = True
-san_ip = {ip}
-san_login = {login}
-san_password = {password}
-volume_backend_name = datera
-datera_debug = True
-"""
-
-
-def check_requirements():
-    vprint("Checking Requirements")
-    for binary in REQUIREMENTS:
-        if not exe_check("which {}".format(binary), err=False):
-            print("Missing requirement:", binary)
-            print("Please install and retry script")
 
 
 def detect_cinder_install():
@@ -65,107 +39,6 @@ def detect_cinder_install():
             raise EnvironmentError(
                 "Cinder installation not found. Usual locations: [{}, {}]"
                 "".format(PACKAGE_INSTALL, DEVSTACK_INSTALL))
-
-
-def detect_service_restart_cmd(service, display=False):
-
-    def is_journalctl():
-        try:
-            exe("journalctl --unit {} | grep 'No entries'")
-            return False
-        except subprocess.CalledProcessError:
-            return True
-
-    def screen_name(service):
-        first = service[0]
-        pos = service.find("-")
-        return "-".join((first, service[pos+1:pos+4]))
-
-    result = exe(
-        "sudo service --status-all 2>&1 | awk '{{print $4}}' | grep {} || true"
-        "".format(service))
-    if service in result:
-        return "sudo service {} restart".format(result.strip())
-    result = exe("sudo sysctl --all 2>&1 | awk '{{print $1}}' | grep {} || "
-                 "true".format(service))
-    if service in result:
-        return "sudo service {} restart".format(
-            result.replace(".service", "").strip())
-    sn = screen_name(service)
-    result = exe(
-        "screen -Q windows | grep {}".format(sn))
-    if sn in result:
-        if display:
-            return "screen -S stack -p {} -X stuff $'\\003 !!\\n'".format(sn)
-        else:
-            return "screen -S stack -p {} -X stuff $'\003 !!\\n'".format(sn)
-    raise EnvironmentError("Service: {} not detected".format(service))
-
-
-def clone_driver(cinder_driver, d_version):
-    check_requirements()
-    # Get repository and checkout version
-    if not cinder_driver:
-        repo = REPO
-        if not os.path.isdir("{}/cinder-driver".format(HOME)):
-            exe("cd {} && git clone {}".format(HOME, GITHUB))
-    else:
-        repo = cinder_driver
-    version = d_version
-    exe("cd {} && git fetch --all".format(HOME))
-    exe("cd {} && git checkout {}".format(repo, version))
-    loc = detect_cinder_install()
-    return repo, loc
-
-
-def install_volume_driver(cinder_driver, ip, username, password, d_version):
-    # Copy files to install location
-    repo, loc = clone_driver(cinder_driver, d_version)
-    dloc = os.path.join(loc, "volume/drivers")
-    exe("cp -r {}/src/datera/ {}".format(repo, dloc))
-
-    # Modify etc file
-    data = None
-    with io.open(ETC, 'r') as f:
-        data = f.readlines()
-    # Place lines under [DEFAULT]
-    insert = 0
-    for index, line in enumerate(data):
-        if any((elem in line for elem in
-                ("enabled_backends", "verbose", "debug"))):
-            del data[index]
-        elif "DEFAULT" in line:
-            insert = index
-    data.insert(insert + 1, "enabled_backends = datera")
-    data.insert(insert + 1, "verbose = True")
-    data.insert(insert + 1, "debug = True")
-
-    # Write [datera] section
-    tdata = ETC_TEMPLATE.format(
-        ip=ip,
-        login=username,
-        password=password)
-    data.extend(tdata.splitlines())
-
-    shutil.copyfile(ETC, ETC + ".bak.{}".format(str(uuid.uuid4())[:4]))
-    with io.open(ETC, 'w') as f:
-        for line in data:
-            line = line.strip()
-            f.write(line)
-            f.write("\n")
-
-    # Restart cinder-volume service
-    restart = detect_service_restart_cmd("cinder-volume")
-    vprint("Restarting the cinder-volume service")
-    if loc == DEVSTACK_INSTALL:
-        vprint("Detected devstack")
-    else:
-        vprint("Detected non-devstack")
-    exe(restart)
-
-
-def check_drivers(config):
-    check_cinder_volume_driver(config)
 
 
 def check_cinder_volume_driver(config):
@@ -268,3 +141,7 @@ def check_cinder_volume_driver(config):
                  "minimum QoS values here", "B5D29621")
 
     sf(name)
+
+
+def run_checks(config):
+    check_cinder_volume_driver(config)

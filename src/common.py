@@ -2,7 +2,11 @@ from __future__ import (print_function, unicode_literals, division,
                         absolute_import)
 
 import functools
+import glob
+import importlib
 import io
+import os
+import re
 import subprocess
 
 try:
@@ -24,6 +28,7 @@ def apply_color(value_for_coloring=None, color=None):
     return "{}{}{}".format(prefix, value_for_coloring, suffix)
 
 
+PLUGIN_LOC = os.path.join(os.path.dirname(__file__), "plugins")
 VERBOSE = False
 WARNINGS = True
 
@@ -106,6 +111,17 @@ def idempotent(func):
         func()
 
     return _wrapper
+
+
+def load_plugins(regex, globx):
+    found = {}
+    CHECK_RE = re.compile(regex)
+    path = glob.glob(os.path.join(PLUGIN_LOC, globx))
+    for file in path:
+        name = CHECK_RE.match(file).groups(1)[0]
+        mod = importlib.import_module("plugins." + os.path.basename(file)[:-3])
+        found[name] = mod
+    return found
 
 
 def parse_mconf(data):

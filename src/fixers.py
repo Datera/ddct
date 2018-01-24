@@ -3,10 +3,11 @@ from __future__ import (print_function, unicode_literals, division,
 import io
 import os
 import shutil
+import sys
 import uuid
 
 
-from common import vprint, exe, get_os, idempotent
+from common import vprint, exe, get_os, idempotent, load_plugins
 
 from tabulate import tabulate
 
@@ -72,29 +73,34 @@ blacklist_exceptions {
 
 
 def no_fix():
+    """No-op function"""
     vprint("No fix for this code")
 
 
 @idempotent
 def fix_arp_1():
+    """Fixes net.ipv4.conf.all.arp_announce"""
     vprint("Fixing ARP setting")
     exe("sysctl -w net.ipv4.conf.all.arp_announce=2")
 
 
 @idempotent
 def fix_arp_2():
+    """Fixes net.ipv4.conf.all.arp_ignore"""
     vprint("Fixing ARP setting")
     exe("sysctl -w net.ipv4.conf.all.arp_ignore=1")
 
 
 @idempotent
 def fix_irq_1():
+    """Stops irqbalance services"""
     vprint("Stopping irqbalance service")
     exe("service irqbalance stop")
 
 
 @idempotent
 def fix_cpufreq_1():
+    """Installs cpufreq tooling packages"""
     if get_os() == "ubuntu":
         # Install necessary headers and utils
         exe("apt-get install linux-tools-$(uname -r) "
@@ -108,6 +114,7 @@ def fix_cpufreq_1():
 
 @idempotent
 def fix_cpufreq_2():
+    """Updates governer to performance via cpufreq"""
     # Update governor
     exe("cpupower frequency-set --governor performance")
     # Restart service
@@ -122,6 +129,7 @@ def fix_cpufreq_2():
 
 @idempotent
 def fix_block_devices_1():
+    """Updates GRUB with noop scheduling, requires restart"""
     vprint("Fixing block device settings")
     grub = "/etc/default/grub"
     bgrub = "/etc/default/grub.bak.{}".format(str(uuid.uuid4())[:4])
@@ -131,11 +139,18 @@ def fix_block_devices_1():
     data = []
     with io.open(grub, "r+") as f:
         for line in f.readlines():
-            if "GRUB_CMDLINE_LINUX=" in line and "elevator=noop" not in line:
-                line = "=".join(("GRUB_CMDLINE_LINUX", "\"" + " ".join((
-                    line.split("=")[-1].strip("\""), "elevator=noop"))))
+            if ("GRUB_CMDLINE_LINUX_DEFAULT=" in line and
+                    "elevator=noop" not in line):
+                i = line.rindex("\"")
+                lline = list(line)
+                if lline[i-1] == "\"":
+                    lline.insert(i, "elevator=noop")
+                else:
+                    lline.insert(i, " elevator=noop")
+                line = "".join(lline)
             data.append(line)
     with io.open(grub, "w+") as f:
+        print(data)
         f.writelines(data)
     if get_os() == "ubuntu":
         exe("update-grub2")
@@ -145,6 +160,7 @@ def fix_block_devices_1():
 
 @idempotent
 def fix_multipath_1():
+    """Installs multipath tooling packages"""
     vprint("Fixing multipath settings")
     if get_os() == "ubuntu":
         exe("apt-get install multipath-tools -y")
@@ -154,6 +170,7 @@ def fix_multipath_1():
 
 @idempotent
 def fix_multipath_2():
+    """Enables multipathd service"""
     if get_os() == "ubuntu":
         exe("systemctl start multipath-tools")
         exe("systemctl enable multipath-tools")
@@ -164,6 +181,7 @@ def fix_multipath_2():
 
 @idempotent
 def fix_multipath_conf_1():
+    """Writes completely new multipath.conf based off of template"""
     mfile = "/etc/multipath.conf"
     bfile = "/etc/multipath.conf.bak.{}".format(str(uuid.uuid4())[:4])
     if os.path.exists(mfile):
@@ -192,19 +210,36 @@ fix_dict = {
     "1D506D89": [fix_multipath_conf_1]}
 
 
-def print_fixes():
+def print_fixes(plugins):
     print("Supported Fixes")
+    if plugins:
+        load_plugin_fixes(plugins)
     t = tabulate(
         sorted(map(lambda x: (x[0],
-               ", ".join(map(lambda y: y.__name__, x[1]))),
+               ", ".join(map(lambda y: y.__doc__, x[1]))),
             fix_dict.items())),
         headers=["Code", "Fix Functions"],
         tablefmt="grid")
     print(t)
 
 
-def run_fixes(codes):
+def load_plugin_fixes(plugins):
+    plugs = load_plugins(".*fix_(.*)\.py", "fix_*.py")
+    for plugin in plugins:
+        if plugin not in plugs:
+            print("Unrecognized fix plugin requested:", plugin)
+            print("Available fix plugins:", ", ".join(plugins.keys()))
+            sys.exit(1)
+        fix_dict.update(plugs[plugin].load_fixes())
+
+
+def run_fixes(codes, config, plugins=None):
+    if plugins:
+        load_plugin_fixes(plugins)
     for code in codes:
         fixes = fix_dict[code]
         for fix in fixes:
-            fix()
+            try:
+                fix()
+            except TypeError:
+                fix(config)

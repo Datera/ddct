@@ -15,17 +15,17 @@ import sys
 
 import common
 from common import ff, sf, gen_report, read_report
-from validators import client_check, connection_check
-from check_drivers import check_drivers
+from validators import run_checks
 from fixers import run_fixes, print_fixes
 
-VERSION = "v1.1.0"
+VERSION = "v1.2.0"
 
 VERSION_HISTORY = """
     v1.0.0 -- Initial version
     v1.0.1 -- Additional multipath.conf checks, Check IDs, tool versioning
     v1.0.2 -- Added report reading and file output
     v1.1.0 -- Adding support for running fixes based on report codes
+    v1.2.0 -- Adding plugin support, moving cinder-volume to plugins
 """
 
 
@@ -88,19 +88,19 @@ def main(args):
 
     ran_fixes = False
     if args.print_fixes:
-        print_fixes()
+        print_fixes(args.use_plugins)
         sys.exit(0)
 
     if args.in_report:
         report = read_report(args.in_report)
         if args.run_fixes:
-            run_fixes(report.code_list())
+            run_fixes(report.code_list(), config, plugins=args.use_plugins)
             ran_fixes = True
         else:
             print(report.generate())
             sys.exit(0)
     elif args.codes and args.run_fixes:
-        run_fixes(args.codes)
+        run_fixes(args.codes, config, plugins=args.use_plugins)
         ran_fixes = True
 
     if ran_fixes:
@@ -108,10 +108,7 @@ def main(args):
     else:
         print("Running checks")
 
-    client_check(config)
-    connection_check(config)
-    if not args.no_drivers:
-        check_drivers(config)
+    run_checks(config, plugins=args.use_plugins)
     gen_report(outfile=args.out, quiet=args.quiet)
 
 
@@ -122,8 +119,6 @@ if __name__ == "__main__":
                         help="Generate config file example")
     parser.add_argument("-c", "--config-file",
                         help="Config file location")
-    parser.add_argument("-n", "--no-drivers", action="store_true",
-                        help="Disable driver checks")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Enables verbose output")
     parser.add_argument("-w", "--disable-warnings", action="store_true",
@@ -144,6 +139,8 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--print-fixes", action="store_true",
                         help="Print out the tool's currently supported fixes "
                              "and codes")
+    parser.add_argument("-u", "--use-plugins", nargs="*",
+                        help="Accepts a space separated list of plugins")
     parser.add_argument("--version", action="store_true",
                         help="Print DDCT version")
     args = parser.parse_args()
