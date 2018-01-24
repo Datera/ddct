@@ -154,18 +154,21 @@ The tool should be run until all checks show "Success"
 Writing Plugins
 ---------------
 
-Creating a plugin for ddct is a straightforward process and can be accomplished
-via the following steps:
+Creating a plugin for ddct is a straightforward process.
 
-* First, determine what the plugin should be called.  For the following
+First, determine what the plugin should be called.  For the following
   example, we're going to use the plugin name "my_driver"
-* The name you chose determines the name of the two files than need to be
-  created under src/plugins, a check file (check_my_driver.py) and a fix file
-  (fix_my_driver.py)
-* The Check file will always have the format "check_$(your_name).py"
-* The Fix file will always have the format "fix_$(your_name).py"
-* Once we've placed these two files under src/plugins, add the following
-  template to the check file (check_my_driver.py)
+
+The name you chose determines the name of the two files than need to be created
+under src/plugins, a check file (check_my_driver.py) and a fix file
+(fix_my_driver.py)
+
+The Check file will always have the format "check_$(your_name).py"
+
+The Fix file will always have the format "fix_$(your_name).py"
+
+Once we've placed these two files under src/plugins, add the following template
+to the check file (check_my_driver.py)
 ```python
 from __future__ import (print_function, unicode_literals, division,
                         absolute_import)
