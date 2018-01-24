@@ -170,7 +170,7 @@ via the following steps:
 from __future__ import (print_function, unicode_literals, division,
                         absolute_import)
 
-from common import vprint, exe_check, ff, sf, wf
+from common import vprint, exe_check, ff, wf, check
 
 def run_checks(config):
     pass
@@ -203,16 +203,15 @@ ddct config an example of which can be seen here:
 }
 ```
 
-When writing a check, the following functions should be used to denote success,
-warning and failure and are imported from common:
+When writing a check, the following functions should be used to denote warning
+and failure and are imported from common:
 
-Success: sf(test_name)
-Warning: wf(test_name, reason, id)
-Failure: ff(test_name, reason, id)
+Warning: wf(reason, id)
+Failure: ff(reason, id)
 
-Where "test_name" is the category of the test, for example ARP, "reason" is the
-human readable reason for test failure (or warning) and "id" is the manually
-created unique ID for the failure.
+Where "reason" is the human readable reason for test failure (or warning) and
+"id" is the manually created unique ID for the failure.  A test that returns
+without calling "wf" or "ff" is considered a "success".
 
 IDs can be created by taking the first section of a UUID4 ID and uppercasing it.
 In python this can be accomplished via
@@ -232,11 +231,10 @@ as they are used for determining the series of fixes needed.
 Below is an example test case:
 
 ```python
+@check("MY TESTS")
 def my_plugin_tests():
-    name = "MY TESTS"
     if not exe_check("which ping", err=False):
-        return ff(name, "Couldn't find ping", "95C9B3AC")
-    sf(name)
+        return ff("Couldn't find ping", "95C9B3AC")
 ```
 
 This would be shown in the report as the following line:

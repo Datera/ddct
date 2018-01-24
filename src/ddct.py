@@ -14,11 +14,11 @@ import sys
 
 
 import common
-from common import ff, sf, gen_report, read_report
+from common import ff, gen_report, read_report, check
 from validators import run_checks
 from fixers import run_fixes, print_fixes
 
-VERSION = "v1.2.0"
+VERSION = "v1.3.0"
 
 VERSION_HISTORY = """
     v1.0.0 -- Initial version
@@ -26,6 +26,7 @@ VERSION_HISTORY = """
     v1.0.2 -- Added report reading and file output
     v1.1.0 -- Adding support for running fixes based on report codes
     v1.2.0 -- Adding plugin support, moving cinder-volume to plugins
+    v1.3.0 -- Created "check" decorator and changing wf/ff function signatures
 """
 
 
@@ -54,20 +55,10 @@ def generate_config_file():
         sys.exit(0)
 
 
-def main(args):
-    if args.version:
-        print("Datera Deployment Check Tool (DDCT) version: ", VERSION)
-        sys.exit(0)
-    common.VERBOSE = args.verbose
-    common.WARNINGS = not args.disable_warnings
-    if not common.tabulate:
-        print("Please install requirements listed in requirements.txt")
-        sys.exit(1)
-    # Generate or load config file
-    if args.generate_config_file:
-        generate_config_file()
-        return 0
-    elif args.config_file:
+@check("CONFIG")
+def check_config(args):
+    config = None
+    if args.config_file:
         if not os.path.exists(args.config_file):
             raise EnvironmentError(
                 "Config file {} not found".format(args.config_file))
@@ -82,9 +73,24 @@ def main(args):
               "\nA sample config file can be generated with the '-g' flag."
               "".format(
                   DEFAULT_CONFIG_FILE))
-        return ff("CONFIG", "Missing config file")
+        return ff("Missing config file")
+    return config
 
-    sf("CONFIG")
+
+def main(args):
+    if args.version:
+        print("Datera Deployment Check Tool (DDCT) version: ", VERSION)
+        sys.exit(0)
+    common.VERBOSE = args.verbose
+    common.WARNINGS = not args.disable_warnings
+    if not common.tabulate:
+        print("Please install requirements listed in requirements.txt")
+        sys.exit(1)
+    # Generate or load config file
+    if args.generate_config_file:
+        generate_config_file()
+        return 0
+    config = check_config(args)
 
     ran_fixes = False
     if args.print_fixes:

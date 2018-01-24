@@ -6,7 +6,7 @@ import os
 import re
 import subprocess
 
-from common import vprint, exe, ff, sf, wf
+from common import vprint, exe, ff, wf, check
 
 ETC = "/etc/cinder/cinder.conf"
 PACKAGE_INSTALL = "/usr/lib/python2.7/dist-packages/cinder"
@@ -41,17 +41,17 @@ def detect_cinder_install():
                 "".format(PACKAGE_INSTALL, DEVSTACK_INSTALL))
 
 
+@check("Cinder Volume")
 def check_cinder_volume_driver(config):
     if "cinder-volume" not in config:
         return None
     need_version = config["cinder-volume"]["version"].strip("v")
-    name = "Cinder Volume"
     loc = detect_cinder_install()
     dfile = os.path.join(loc, "volume/drivers/datera/datera_iscsi.py")
     if not os.path.exists(dfile):
         errloc = os.path.join(loc, "volume/drivers")
-        return ff(name, "Couldn't detect Datera Cinder driver install at "
-                        "{}".format(errloc), "680E61DB")
+        return ff("Couldn't detect Datera Cinder driver install at "
+                  "{}".format(errloc), "680E61DB")
     version = None
     with io.open(dfile, 'r') as f:
         for line in f:
@@ -60,11 +60,11 @@ def check_cinder_volume_driver(config):
                 version = version.group(1)
                 break
     if not version:
-        return ff(name, "No version detected for Datera Cinder driver at "
-                        "{}".format(dfile), "A37FD778")
+        return ff("No version detected for Datera Cinder driver at "
+                  "{}".format(dfile), "A37FD778")
     if version != need_version:
-        return ff(name, "Cinder Driver version mismatch, have: {}, want: "
-                        "{}".format(version, need_version), "5B6EFC71")
+        return ff("Cinder Driver version mismatch, have: {}, want: "
+                  "{}".format(version, need_version), "5B6EFC71")
 
     section = None
     with io.open(ETC, 'r') as f:
@@ -73,24 +73,24 @@ def check_cinder_volume_driver(config):
             if default:
                 break
         if not default:
-            ff(name, "[DEFAULT] section missing from "
-                     "/etc/cinder/cinder.conf", "7B98CFA1")
+            ff("[DEFAULT] section missing from /etc/cinder/cinder.conf",
+               "7B98CFA1")
         for line in f:
             section = ETC_SECTION_RE.match(line)
             if section:
                 break
             if line.startswith("enabled_backends"):
                 if "datera" not in line:
-                    ff(name, "datera is not set under enabled_backends "
-                             "in /etc/cinder/cinder.conf", "A4402034")
+                    ff("datera is not set under enabled_backends "
+                       "in /etc/cinder/cinder.conf", "A4402034")
             if line.startswith("default_volume_type"):
                 if "datera" not in line:
-                    wf(name, "datera is not set as default_volume_type in"
-                             " /etc/cinder/cinder.conf", "C2B8C696")
+                    wf("datera is not set as default_volume_type in"
+                       " /etc/cinder/cinder.conf", "C2B8C696")
 
         if not section:
-            return ff(name, "[datera] section missing from "
-                            "/etc/cinder/cinder.conf", "525BAAB0")
+            return ff("[datera] section missing from "
+                      "/etc/cinder/cinder.conf", "525BAAB0")
         dsection = []
         section_match = re.compile("^\[.*\]")
         for line in f:
@@ -124,23 +124,21 @@ def check_cinder_volume_driver(config):
             defaults_check = True
 
     if not san_check:
-        ff(name, "san_ip line is missing or not matching ip address:"
-                 " {}".format(ip), "8208B9E7")
+        ff("san_ip line is missing or not matching ip address:"
+           " {}".format(ip), "8208B9E7")
     if not user_check:
-        ff(name, "san_login line is missing or not matching username:"
-                 " {}".format(user), "3A6A78D1")
+        ff("san_login line is missing or not matching username:"
+           " {}".format(user), "3A6A78D1")
     if not pass_check:
-        ff(name, "san_password line is missing or not matching "
-                 "password: {}".format(passwd), "8DBC87E8")
+        ff("san_password line is missing or not matching "
+           "password: {}".format(passwd), "8DBC87E8")
     if not vbn_check:
-        ff(name, "volume_backend_name is not set", "5FEC0454")
+        ff("volume_backend_name is not set", "5FEC0454")
     if not debug_check:
-        wf(name, "datera_debug is not enabled")
+        wf("datera_debug is not enabled")
     if not defaults_check:
-        wf(name, "datera_volume_type_defaults is not set, consider setting "
-                 "minimum QoS values here", "B5D29621")
-
-    sf(name)
+        wf("datera_volume_type_defaults is not set, consider setting "
+           "minimum QoS values here", "B5D29621")
 
 
 def run_checks(config):

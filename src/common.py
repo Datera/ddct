@@ -4,6 +4,7 @@ from __future__ import (print_function, unicode_literals, division,
 import functools
 import glob
 import importlib
+import inspect
 import io
 import os
 import re
@@ -113,6 +114,36 @@ def idempotent(func):
     return _wrapper
 
 
+def check(test_name):
+    """
+    Decorator to be used for checks that automatically calls sf() at the
+    end of the check
+
+    Usage:
+        @check("Test Name")
+        def my_tests():
+            if not some_condition:
+                ff("We failed!")
+
+
+    Which is equivalent to:
+        def my_tests():
+            name = "Test Name"
+            if not some_condition:
+                ff(name, "We Failed!")
+            sf(name)
+    """
+    def _outer(func):
+        @functools.wraps(func)
+        def _inner_check_func(*args, **kwargs):
+            tname = test_name  # noqa
+            result = func(*args, **kwargs)
+            sf()
+            return result
+        return _inner_check_func
+    return _outer
+
+
 def load_plugins(regex, globx):
     found = {}
     CHECK_RE = re.compile(regex)
@@ -151,13 +182,26 @@ def get_os():
         return "centos"
 
 
+def _lookup_var():
+    name = None
+    for frame in inspect.stack():
+        if frame[3] == "_inner_check_func":
+            name = frame[0].f_locals['test_name']
+            break
+    if not name:
+        raise ValueError("Couldn't find test_name in frame stack")
+    return name
+
+
 # Success Func
-def sf(name):
+def sf():
+    name = _lookup_var()
     report.add_success(name)
 
 
 # Fail Func
-def ff(name, reasons, uid):
+def ff(reasons, uid):
+    name = _lookup_var()
     if type(reasons) not in (list, tuple):
         report.add_failure(name, reasons, uid)
         return
@@ -165,7 +209,8 @@ def ff(name, reasons, uid):
 
 
 # Warn Func
-def wf(name, reasons, uid):
+def wf(reasons, uid):
+    name = _lookup_var()
     if type(reasons) not in (list, tuple):
         report.add_warning(name, reasons, uid)
         return
