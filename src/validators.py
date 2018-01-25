@@ -4,19 +4,21 @@ from __future__ import (print_function, unicode_literals, division,
 import io
 import os
 import sys
+import time
+import threading
 
-from common import vprint, exe_check, ff, parse_mconf, get_os, load_plugins
+from common import vprint, exe_check, ff, parse_mconf, get_os, check_load
 from common import check
 
 
 @check("OS")
-def check_os():
+def check_os(config):
     if not get_os():
         return ff("Unsupported Operating System", "3C47368")
 
 
 @check("ARP")
-def check_arp():
+def check_arp(config):
     vprint("Checking ARP settings")
     if not exe_check("sysctl --all 2>/dev/null | "
                      "grep 'net.ipv4.conf.all.arp_announce = 2'",
@@ -29,7 +31,7 @@ def check_arp():
 
 
 @check("IRQ")
-def check_irq():
+def check_irq(config):
     vprint("Checking irqbalance settings, (should be turned off)")
     if not exe_check("which systemctl"):
         if not exe_check("service irqbalance status | "
@@ -44,7 +46,7 @@ def check_irq():
 
 
 @check("CPUFREQ")
-def check_cpufreq():
+def check_cpufreq(config):
     vprint("Checking cpufreq settings")
     if not exe_check("which cpupower"):
         return ff("cpupower is not installed", "20CEE732")
@@ -59,7 +61,7 @@ def check_cpufreq():
 
 
 @check("Block Devices")
-def check_block_devices():
+def check_block_devices(config):
     vprint("Checking block device settings")
     grub = "/etc/default/grub"
     with io.open(grub, "r") as f:
@@ -72,7 +74,7 @@ def check_block_devices():
 
 
 @check("Multipath")
-def check_multipath():
+def check_multipath(config):
     vprint("Checking multipath settings")
     if not exe_check("which multipath", err=False):
         ff("Multipath binary could not be found, is it installed?",
@@ -88,7 +90,7 @@ def check_multipath():
 
 
 @check("Multipath Conf")
-def check_multipath_conf():
+def check_multipath_conf(config):
     mfile = "/etc/multipath.conf"
     if not os.path.exists(mfile):
         return ff("/etc/multipath.conf file not found", "1D506D89")
@@ -162,24 +164,19 @@ def check_multipath_conf():
                "642753A0")
 
 
-def client_check(config):
-
-    cchecks = [check_os,
-               check_arp,
-               check_irq,
-               check_cpufreq,
-               check_block_devices,
-               check_multipath,
-               check_multipath_conf]
-
-    list(map(lambda x: x(), cchecks))
-
-
 @check("MGMT")
 def mgmt_check(config):
     mgmt = config["mgmt_ip"]
     if not exe_check("ping -c 2 -W 1 {}".format(mgmt), err=False):
         ff("Could not ping management ip {}".format(mgmt), "65FC68BB")
+    timeout = 5
+    while not exe_check(
+            "ip neigh show | grep {} | grep REACHABLE".format(mgmt)):
+        timeout -= 1
+        time.sleep(1)
+        if timeout < 0:
+            ff("Arp state for mgmt is not 'REACHABLE'", "BF6A912A")
+            break
 
 
 @check("VIP1")
@@ -187,6 +184,14 @@ def vip1_check(config):
     vip1 = config["vip1_ip"]
     if not exe_check("ping -c 2 -W 1 {}".format(vip1), err=False):
         ff("Could not ping vip1 ip {}".format(vip1), "1827147B")
+    timeout = 5
+    while not exe_check(
+            "ip neigh show | grep {} | grep REACHABLE".format(vip1)):
+        timeout -= 1
+        time.sleep(1)
+        if timeout < 0:
+            ff("Arp state for vip1 is not 'REACHABLE'", "3C33D70D")
+            break
 
 
 @check("VIP2")
@@ -194,15 +199,29 @@ def vip2_check(config):
     vip2 = config.get("vip2_ip")
     if vip2 and not exe_check("ping -c 2 -W 1 {}".format(vip2), err=False):
         ff("Could not ping vip2 ip {}".format(vip2), "3D76CE5A")
+    timeout = 5
+    while not exe_check(
+            "ip neigh show | grep {} | grep REACHABLE".format(vip2)):
+        timeout -= 1
+        time.sleep(1)
+        if timeout < 0:
+            ff("Arp state for vip2 is not 'REACHABLE'", "4F6B8D91")
+            break
 
-check_list = [client_check,
+check_list = [check_os,
+              check_arp,
+              check_irq,
+              check_cpufreq,
+              check_block_devices,
+              check_multipath,
+              check_multipath_conf,
               mgmt_check,
               vip1_check,
               vip2_check]
 
 
 def load_plugin_checks(plugins):
-    plugs = load_plugins(".*check_(.*)\.py", "check_*.py")
+    plugs = check_load()
     for plugin in plugins:
         if plugin not in plugs:
             print("Unrecognized check plugin requested:", plugin)
@@ -214,5 +233,10 @@ def load_plugin_checks(plugins):
 def run_checks(config, plugins=None):
     if plugins:
         load_plugin_checks(plugins)
+    threads = []
     for ck in check_list:
-        ck(config)
+        thread = threading.Thread(target=ck, args=(config,))
+        threads.append(thread)
+        thread.start()
+    for thread in threads:
+        thread.join()

@@ -14,7 +14,7 @@ import sys
 
 
 import common
-from common import ff, gen_report, read_report, check
+from common import ff, gen_report, read_report, check, plugin_table
 from validators import run_checks
 from fixers import run_fixes, print_fixes
 
@@ -35,6 +35,8 @@ CONFIG = {"mgmt_ip": "1.1.1.1",
           "vip2_ip": "10.0.2.1",
           "username": "admin",
           "password": "password",
+          "cluster_root_password": None,
+          "cluster_root_keyfile": None,
           "cinder-volume": {
               "version": "2.7.2",
               "location": None}}
@@ -97,6 +99,10 @@ def main(args):
         print_fixes(args.use_plugins)
         sys.exit(0)
 
+    if args.list_plugins:
+        plugin_table()
+        sys.exit(0)
+
     if args.in_report:
         report = read_report(args.in_report)
         if args.run_fixes:
@@ -145,6 +151,8 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--print-fixes", action="store_true",
                         help="Print out the tool's currently supported fixes "
                              "and codes")
+    parser.add_argument("-l", "--list-plugins", action="store_true",
+                        help="List available plugins")
     parser.add_argument("-u", "--use-plugins", nargs="*",
                         help="Accepts a space separated list of plugins")
     parser.add_argument("--version", action="store_true",

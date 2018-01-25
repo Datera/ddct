@@ -7,7 +7,7 @@ import sys
 import uuid
 
 
-from common import vprint, exe, get_os, idempotent, load_plugins
+from common import vprint, exe, get_os, idempotent, fix_load
 
 from tabulate import tabulate
 
@@ -224,7 +224,7 @@ def print_fixes(plugins):
 
 
 def load_plugin_fixes(plugins):
-    plugs = load_plugins(".*fix_(.*)\.py", "fix_*.py")
+    plugs = fix_load()
     for plugin in plugins:
         if plugin not in plugs:
             print("Unrecognized fix plugin requested:", plugin)

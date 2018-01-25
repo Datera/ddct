@@ -11,9 +11,11 @@ import re
 import subprocess
 
 try:
+    import paramiko
     from tabulate import tabulate
 except ImportError:
     tabulate = None
+    paramiko = None
 
 
 def apply_color(value_for_coloring=None, color=None):
@@ -36,6 +38,13 @@ WARNINGS = True
 SUCCESS = apply_color("Success", color="green")
 FAILURE = apply_color("FAIL", color="red")
 WARNING = apply_color("WARN", color="yellow")
+
+
+CHECK_RE = re.compile(".*check_(.*)\.py")
+CHECK_GLOB = "check_*.py"
+
+FIX_RE = re.compile(".*fix_(.*)\.py")
+FIX_GLOB = "fix_*.py"
 
 
 class Report(object):
@@ -144,15 +153,36 @@ def check(test_name):
     return _outer
 
 
+def list_plugins():
+    pass
+
+
 def load_plugins(regex, globx):
     found = {}
-    CHECK_RE = re.compile(regex)
+    RE = re.compile(regex)
     path = glob.glob(os.path.join(PLUGIN_LOC, globx))
     for file in path:
-        name = CHECK_RE.match(file).groups(1)[0]
+        name = RE.match(file).groups(1)[0]
         mod = importlib.import_module("plugins." + os.path.basename(file)[:-3])
         found[name] = mod
     return found
+
+
+def check_load():
+    return load_plugins(CHECK_RE, CHECK_GLOB)
+
+
+def fix_load():
+    return load_plugins(FIX_RE, FIX_GLOB)
+
+
+def plugin_table():
+    checks = map(lambda x: [x], check_load())
+    fixes = map(lambda x: [x], fix_load())
+    print("\n".join((tabulate(checks, headers=["Check Plugins"],
+                     tablefmt="grid"),
+                     tabulate(fixes, headers=["Fix Plugins"],
+                     tablefmt="grid"))))
 
 
 def parse_mconf(data):
@@ -275,3 +305,24 @@ def exe_check(cmd, err=False):
         if not err:
             return False
         return True
+
+
+def cluster_cmd(cmd, config, fail_ok=False):
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(
+        paramiko.AutoAddPolicy())
+    msg = "Executing command: {} on Cluster".format(cmd)
+    vprint(msg)
+    _, stdout, stderr = ssh.exec_command(cmd)
+    exit_status = stdout.channel.recv_exit_status()
+    result = None
+    if int(exit_status) == 0:
+        result = stdout.read()
+    elif fail_ok:
+        result = stderr.read()
+    else:
+        raise EnvironmentError(
+            "Nonzero return code: {} stderr: {}".format(
+                exit_status,
+                stderr.read()))
+    return result

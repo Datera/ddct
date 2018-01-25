@@ -1,1 +1,4 @@
+ipaddress
+paramiko
+six
 tabulate
