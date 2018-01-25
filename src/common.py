@@ -311,6 +311,19 @@ def cluster_cmd(cmd, config, fail_ok=False):
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(
         paramiko.AutoAddPolicy())
+    if config.get('cluster_root_keyfile'):
+        ssh.connect(hostname=config['mgmt_ip'],
+                    username='root',
+                    banner_timeout=60,
+                    pkey=config.get('cluster_root_keyfile'))
+    elif config.get('cluster_root_password'):
+        ssh.connect(hostname=config['mgmt_ip'],
+                    username='root',
+                    password=config.get('cluster_root_password'),
+                    banner_timeout=60)
+    else:
+        raise ValueError("Missing cluster_root_keyfile or "
+                         "cluster_root_password for this test")
     msg = "Executing command: {} on Cluster".format(cmd)
     vprint(msg)
     _, stdout, stderr = ssh.exec_command(cmd)
