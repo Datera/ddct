@@ -18,7 +18,7 @@ from common import ff, gen_report, read_report, check, plugin_table
 from validators import run_checks
 from fixers import run_fixes, print_fixes
 
-VERSION = "v1.3.0"
+VERSION = "v1.4.0"
 
 VERSION_HISTORY = """
     v1.0.0 -- Initial version
@@ -27,6 +27,7 @@ VERSION_HISTORY = """
     v1.1.0 -- Adding support for running fixes based on report codes
     v1.2.0 -- Adding plugin support, moving cinder-volume to plugins
     v1.3.0 -- Created "check" decorator and changing wf/ff function signatures
+    v1.4.0 -- Changed ddct.py to ddct
 """
 
 

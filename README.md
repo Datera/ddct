@@ -55,7 +55,7 @@ $ source .ddct/bin/activate
 $ pip install -r ../requirements.txt
 
 # Generate config file
-$ ./ddct.py -g
+$ ./ddct -g
 
 # Edit config file.  Replace the IP addresses and credentials with those of
 # your Datera EDF cluster
@@ -73,7 +73,7 @@ $ vi ddct.json
 }
 
 # Finally, run the tool
-$ ./ddct.py -c ddct.json
+$ ./ddct -c ddct.json
 ```
 
 The report will have the following format:
@@ -92,7 +92,7 @@ with each test for use by the fixer to run specific fixes for each.
 Below is an example output.  Tests with multiple failure conditions will have
 all currently check-able reasons listed.
 ```
-(.ddct) ubuntu@master-xenial-bfd6:~/ddct/src$ ./ddct.py -c ddct.json
+(.ddct) ubuntu@master-xenial-bfd6:~/ddct/src$ ./ddct -c ddct.json
 Running checks
 +----------------+----------+----------------------------------------------------------------------------------+----------+
 | Test           | Status   | Reasons                                                                          | IDs      |
@@ -137,7 +137,7 @@ Running checks
 This report can then be fed back into the tool via the following invocation:
 
 ```
-$ ./ddct.py -c ddct.json -i test-output.txt -f
+$ ./ddct -c ddct.json -i test-output.txt -f
 ```
 The -i flag lets you specify a file which has a report like the one above and
 the -f flag indicates that the tool should run fixes based on the report output
@@ -290,5 +290,5 @@ no fix.
 Now that we're all done with "my_driver" checks and fixes, we can load them
 via the following:
 ```bash
-$ ./ddct.py -c ddct.json --use-plugin my_driver
+$ ./ddct -c ddct.json --use-plugin my_driver
 ```
