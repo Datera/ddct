@@ -43,10 +43,7 @@ CONFIG = {"mgmt_ip": "1.1.1.1",
           "username": "admin",
           "password": "password",
           "cluster_root_password": None,
-          "cluster_root_keyfile": None,
-          "cinder-volume": {
-              "version": "2.7.2",
-              "location": None}}
+          "cluster_root_keyfile": None}
 
 GEN_CONFIG_FILE = "ddct.json"
 DEFAULT_CONFIG_FILE = ".ddct.json"

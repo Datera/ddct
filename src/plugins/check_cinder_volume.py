@@ -6,12 +6,16 @@ import os
 import re
 import subprocess
 
+import requests
+
 from common import vprint, exe, ff, wf, check
 
 ETC = "/etc/cinder/cinder.conf"
 PACKAGE_INSTALL = "/usr/lib/python2.7/dist-packages/cinder"
 SITE_PACKAGE_INSTALL = "/usr/lib/python2.7/site-packages/cinder"
 DEVSTACK_INSTALL = "/opt/stack/cinder/cinder"
+TAGS = "https://api.github.com/repos/Datera/cinder-driver/tags"
+TAG_RE = re.compile("\d+\.\d+\.\d+")
 
 VERSION_RE = re.compile("^\s+VERSION = ['\"]([\d\.]+)['\"]\s*$")
 
@@ -41,11 +45,26 @@ def detect_cinder_install():
                 "".format(PACKAGE_INSTALL, DEVSTACK_INSTALL))
 
 
+def get_latest_driver_version():
+    found = []
+    weighted_found = []
+    tags = requests.get(TAGS).json()
+    for tag in tags:
+        tag = tag['name'].strip("v")
+        if TAG_RE.match(tag):
+            found.append(tag)
+    for f in found:
+        # Major, minor, patch
+        M, m, p = f.split(".")
+        value = int(M) * 10000 + int(m) * 100 + int(p)
+        weighted_found.append((value, "v" + f))
+    return sorted(weighted_found)[-1][1]
+
+
 @check("Cinder Volume")
 def check_cinder_volume_driver(config):
-    if "cinder-volume" not in config:
-        return None
-    need_version = config["cinder-volume"]["version"].strip("v")
+    version = get_latest_driver_version()
+    need_version = version.strip("v")
     loc = detect_cinder_install()
     dfile = os.path.join(loc, "volume/drivers/datera/datera_iscsi.py")
     if not os.path.exists(dfile):
