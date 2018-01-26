@@ -227,10 +227,10 @@ def load_plugin_checks(plugins):
             print("Unrecognized check plugin requested:", plugin)
             print("Available check plugins:", ", ".join(plugs.keys()))
             sys.exit(1)
-        check_list.append(plugs[plugin].run_checks)
+        check_list.extend(plugs[plugin].load_checks())
 
 
-def run_checks(config, plugins=None):
+def load_checks(config, plugins=None):
     if plugins:
         load_plugin_checks(plugins)
     threads = []

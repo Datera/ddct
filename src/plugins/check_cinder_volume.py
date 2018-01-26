@@ -160,5 +160,5 @@ def check_cinder_volume_driver(config):
            "minimum QoS values here", "B5D29621")
 
 
-def run_checks(config):
-    check_cinder_volume_driver(config)
+def load_checks():
+    return [check_cinder_volume_driver]

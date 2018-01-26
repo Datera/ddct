@@ -175,8 +175,8 @@ from __future__ import (print_function, unicode_literals, division,
 
 from common import vprint, exe_check, ff, wf, check
 
-def run_checks(config):
-    pass
+def load_checks():
+    return []
 ```
 
 * Add the next template to the fix file (fix_my_driver.py)
@@ -189,20 +189,19 @@ def load_fixes():
     return {}
 ```
 
-All checks your plugin should run should be called by the "run_checks" function.
-The function has takes a "config" parameter which will be the contents of the
-ddct config an example of which can be seen here:
+All checks your plugin should run should be returned as a list by the
+"load_checks" function.  The "load_checks" function takes no parameters, but
+each test function should take a "config" parameter which consists of the
+dictionary below:
 ```json
 {
-    "cinder-volume": {
-        "location": null,
-        "version": "v2.7.2"
-    },
     "mgmt_ip": "172.19.1.41",
     "password": "password",
     "username": "admin",
     "vip1_ip": "172.28.41.9",
-    "vip2_ip": "172.29.41.9"
+    "vip2_ip": "172.29.41.9",
+    "cluster_root_password": None,
+    "cluster_root_keyfile": None}
 }
 ```
 
@@ -235,7 +234,7 @@ Below is an example test case:
 
 ```python
 @check("MY TESTS")
-def my_plugin_tests():
+def my_plugin_tests(config):
     if not exe_check("which ping", err=False):
         return ff("Couldn't find ping", "95C9B3AC")
 ```

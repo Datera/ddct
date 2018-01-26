@@ -15,7 +15,7 @@ import sys
 
 import common
 from common import ff, gen_report, read_report, check, plugin_table
-from validators import run_checks
+from validators import load_checks
 from fixers import run_fixes, print_fixes
 
 try:
@@ -126,7 +126,7 @@ def main(args):
     else:
         print("Running checks")
 
-    run_checks(config, plugins=args.use_plugins)
+    load_checks(config, plugins=args.use_plugins)
     gen_report(outfile=args.out, quiet=args.quiet)
 
 

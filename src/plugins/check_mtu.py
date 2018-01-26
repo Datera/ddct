@@ -97,7 +97,5 @@ def check_vip2(config):
     check_mtu("MGMT", vip2, config)
 
 
-def run_checks(config):
-    check_mgmt(config)
-    check_vip1(config)
-    check_vip2(config)
+def load_checks():
+    return [check_mgmt, check_vip1, check_vip2]
