@@ -4,7 +4,7 @@ from __future__ import (print_function, unicode_literals, division,
 import re
 import subprocess
 
-from common import vprint, exe, wf, ff, check, cluster_cmd  # noqa
+from common import vprint, exe, exe_check, ff, check
 
 import ipaddress
 
@@ -53,16 +53,27 @@ def check_mtu(name, ip, config):
                   "CBF8CC4C")
     local_mtu = match.groups(1)[0]
 
-    match = MTU_RE.match(
-                cluster_cmd("ip ad show {} | grep mtu".format(cname),
-                            config))
-    if not match:
+    cluster_mtu = None
+    api = config['api']
+    if name == "MGMT":
+        cluster_mtu = api.system.network.mgmt_vip.get()['network_paths'][
+            0]['mtu']
+    elif name == "VIP1":
+        cluster_mtu = api.system.network.get()['access_vip'][
+            'network_paths'][0]['mtu']
+    elif name == "VIP2":
+        cluster_mtu = api.system.network.get()['access_vip'][
+            'network_paths'][0]['mtu']
+    if not cluster_mtu:
         return ff("Couldn't find cluster {} interface MTU".format(cname),
                   "057AF23D")
-    cluster_mtu = match.groups(1)[0]
-    if local_mtu != cluster_mtu:
-        ff("Local interface {} MTU does not match cluster {} interface MTU,"
+    if str(local_mtu) != str(cluster_mtu):
+        ff("Local interface {} MTU does not match cluster {} interface MTU "
            "[{} != {}]".format(sif, cname, local_mtu, cluster_mtu), "D7F667BC")
+    # Ping check
+    if not exe_check("ping -s 32000 -c 2 -W 1 {}".format(ip)):
+        ff("Could not ping interface with large (32k) packet size, packet"
+           "fragmentation may not be working correctly", "A4CA0D72")
 
 
 @check("MGMT MTU")

@@ -240,3 +240,7 @@ def run_checks(config, plugins=None):
         thread.start()
     for thread in threads:
         thread.join()
+
+# Possible additional checks
+# ethtool -S
+# netstat -F (retrans)

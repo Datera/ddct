@@ -18,6 +18,12 @@ from common import ff, gen_report, read_report, check, plugin_table
 from validators import run_checks
 from fixers import run_fixes, print_fixes
 
+try:
+    from dfs_sdk import get_api
+except ImportError:
+    get_api = None
+
+
 VERSION = "v1.4.0"
 
 VERSION_HISTORY = """
@@ -86,7 +92,7 @@ def main(args):
         sys.exit(0)
     common.VERBOSE = args.verbose
     common.WARNINGS = not args.disable_warnings
-    if not common.tabulate:
+    if not get_api:
         print("Please install requirements listed in requirements.txt")
         sys.exit(1)
     # Generate or load config file
@@ -94,6 +100,8 @@ def main(args):
         generate_config_file()
         return 0
     config = check_config(args)
+    config['api'] = get_api(
+        config['mgmt_ip'], config['username'], config['password'], "v2.2")
 
     ran_fixes = False
     if args.print_fixes:

@@ -2,3 +2,4 @@ ipaddress
 paramiko
 six
 tabulate
+git+http://github.com/Datera/python-sdk
