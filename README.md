@@ -233,7 +233,7 @@ as they are used for determining the series of fixes needed.
 Below is an example test case:
 
 ```python
-@check("MY TESTS")
+@check("MY TESTS", "basic")
 def my_plugin_tests(config):
     if not exe_check("which ping", err=False):
         return ff("Couldn't find ping", "95C9B3AC")
@@ -241,10 +241,18 @@ def my_plugin_tests(config):
 
 This would be shown in the report as the following line:
 ```
-+----------+------+----------------------+----------+
-| MY TESTS | FAIL | Couldn't find ping   | 95C9B3AC |
-+----------+------+----------------------+----------+
++----------+------+----------------------+----------+--------+
+| MY TESTS | FAIL | Couldn't find ping   | 95C9B3AC | basic  |
++----------+------+----------------------+----------+--------+
 ```
+The `@check` decorator's first argument is the name/category of the test and
+every argument afterwards is a "tag" that can be used for selecting and
+deselecting this test with the `--tags` and `--not-tags` flags respectively.
+In the case of the above test `--tags basic` would select the test for running
+(as well as any other test with the "basic" tag).  Then you could deselect the
+test with `--not-tags basic` and no tests with the "basic" flag would be run.
+Any number of tags may be given to a test.
+
 
 When writing fixes, we associate the test ID with a fix.  Below is an example
 of a fix and the entry it makes in "load_fixes()":
