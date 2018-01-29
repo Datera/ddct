@@ -61,7 +61,7 @@ def get_latest_driver_version():
     return sorted(weighted_found)[-1][1]
 
 
-@check("Cinder Volume")
+@check("Cinder Volume", "driver", "plugin")
 def check_cinder_volume_driver(config):
     version = get_latest_driver_version()
     need_version = version.strip("v")

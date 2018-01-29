@@ -76,21 +76,21 @@ def check_mtu(name, ip, config):
            "fragmentation may not be working correctly", "A4CA0D72")
 
 
-@check("MGMT MTU")
+@check("MGMT MTU", "connection", "plugin")
 def check_mgmt(config):
     vprint("Checking mgmt interface mtu match")
     mgmt = config['mgmt_ip']
     check_mtu("MGMT", mgmt, config)
 
 
-@check("VIP1 MTU")
+@check("VIP1 MTU", "connection", "plugin")
 def check_vip1(config):
     vprint("Checking vip1 interface mtu match")
     vip1 = config['vip1_ip']
     check_mtu("VIP1", vip1, config)
 
 
-@check("VIP2 MTU")
+@check("VIP2 MTU", "connection", "plugin")
 def check_vip2(config):
     vprint("Checking vip2 interface mtu match")
     vip2 = config['vip2_ip']

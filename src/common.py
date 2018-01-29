@@ -57,12 +57,14 @@ class Report(object):
         self.failure = {}
         self.failure_id = {}
         self.failure_by_id = {}
+        self.tags = {}
 
-    def add_success(self, name):
+    def add_success(self, name, tags):
         if name not in self.failure and name not in self.warning:
             self.success.append(name)
+            self.tags[name] = tags
 
-    def add_warning(self, name, reason, uid):
+    def add_warning(self, name, reason, uid, tags):
         if WARNINGS:
             if name not in self.warning:
                 self.warning[name] = []
@@ -70,32 +72,42 @@ class Report(object):
             self.warning[name].append(reason)
             self.warning_id[name].append(uid)
             self.warning_by_id[uid] = (name, reason)
+            self.tags[name] = tags
 
-    def add_failure(self, name, reason, uid):
+    def add_failure(self, name, reason, uid, tags):
         if name not in self.failure:
             self.failure[name] = []
             self.failure_id[name] = []
         self.failure[name].append(reason)
         self.failure_id[name].append(uid)
         self.failure_by_id[uid] = (name, reason)
+        self.tags[name] = tags
 
     def generate(self):
-        s = list(map(lambda x: (x, SUCCESS, ""), sorted(self.success)))
+        s = list(map(lambda x: (
+            x,
+            SUCCESS,
+            "",
+            "",
+            "\n".join(self.tags[x])),
+            sorted(self.success)))
         w = list(map(lambda x: (
             x[0],
             WARNING,
             "\n".join(x[1]),
-            "\n".join(self.warning_id[x[0]])),
+            "\n".join(self.warning_id[x[0]]),
+            "\n".join(self.tags[x[0]])),
             sorted(self.warning.items())))
         f = list(map(lambda x: (
             x[0],
             FAILURE,
             "\n".join(x[1]),
-            "\n".join(self.failure_id[x[0]])),
+            "\n".join(self.failure_id[x[0]]),
+            "\n".join(self.tags[x[0]])),
             sorted(self.failure.items())))
         result = tabulate(
             f + w + s,
-            headers=["Test", "Status", "Reasons", "IDs"],
+            headers=["Test", "Status", "Reasons", "IDs", "Tags"],
             tablefmt="grid")
         return result
 
@@ -123,10 +135,13 @@ def idempotent(func):
     return _wrapper
 
 
-def check(test_name):
+def check(test_name, *tags):
     """
     Decorator to be used for checks that automatically calls sf() at the
-    end of the check
+    end of the check.
+
+    NOTE: This should always be the outermost decorator due to
+          non-kosher behavior that *should* make our lives easier
 
     Usage:
         @check("Test Name")
@@ -146,15 +161,13 @@ def check(test_name):
         @functools.wraps(func)
         def _inner_check_func(*args, **kwargs):
             tname = test_name  # noqa
+            ttags = tags  # noqa
             result = func(*args, **kwargs)
             sf()
             return result
+        _inner_check_func._tags = tags
         return _inner_check_func
     return _outer
-
-
-def list_plugins():
-    pass
 
 
 def load_plugins(regex, globx):
@@ -212,39 +225,40 @@ def get_os():
         return "centos"
 
 
-def _lookup_var():
+def _lookup_vars():
     name = None
     for frame in inspect.stack():
         if frame[3] == "_inner_check_func":
             name = frame[0].f_locals['test_name']
+            tags = frame[0].f_locals['tags']
             break
     if not name:
         raise ValueError("Couldn't find test_name in frame stack")
-    return name
+    return name, tags
 
 
 # Success Func
 def sf():
-    name = _lookup_var()
-    report.add_success(name)
+    name, tags = _lookup_vars()
+    report.add_success(name, tags)
 
 
 # Fail Func
 def ff(reasons, uid):
-    name = _lookup_var()
+    name, tags = _lookup_vars()
     if type(reasons) not in (list, tuple):
-        report.add_failure(name, reasons, uid)
+        report.add_failure(name, reasons, uid, tags)
         return
-    report.add_failure(name, "\n".join(reasons), uid)
+    report.add_failure(name, "\n".join(reasons), uid, tags)
 
 
 # Warn Func
 def wf(reasons, uid):
-    name = _lookup_var()
+    name, tags = _lookup_vars()
     if type(reasons) not in (list, tuple):
-        report.add_warning(name, reasons, uid)
+        report.add_warning(name, reasons, uid, tags)
         return
-    report.add_warning(name, "\n".join(reasons), uid)
+    report.add_warning(name, "\n".join(reasons), uid, tags)
 
 
 def gen_report(outfile=None, quiet=False):
@@ -275,11 +289,11 @@ def read_report(infile):
                 result = prevr
                 test = prevt
             if result == FAILURE:
-                in_report.add_failure(test, reason, uid)
+                in_report.add_failure(test, reason, uid, [])
             elif result == WARNING:
-                in_report.add_warning(test, reason, uid)
+                in_report.add_warning(test, reason, uid, [])
             elif result == SUCCESS:
-                in_report.add_success(test)
+                in_report.add_success(test, [])
             prevr = result
             prevt = test
     return in_report

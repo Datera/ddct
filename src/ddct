@@ -24,7 +24,7 @@ except ImportError:
     get_api = None
 
 
-VERSION = "v1.4.0"
+VERSION = "v1.5.0"
 
 VERSION_HISTORY = """
     v1.0.0 -- Initial version
@@ -34,6 +34,7 @@ VERSION_HISTORY = """
     v1.2.0 -- Adding plugin support, moving cinder-volume to plugins
     v1.3.0 -- Created "check" decorator and changing wf/ff function signatures
     v1.4.0 -- Changed ddct.py to ddct
+    v1.5.0 -- Adding tagging support for checks
 """
 
 
@@ -87,18 +88,19 @@ def main(args):
     if args.version:
         print("Datera Deployment Check Tool (DDCT) version: ", VERSION)
         sys.exit(0)
-    common.VERBOSE = args.verbose
-    common.WARNINGS = not args.disable_warnings
-    if not get_api:
-        print("Please install requirements listed in requirements.txt")
-        sys.exit(1)
     # Generate or load config file
     if args.generate_config_file:
         generate_config_file()
-        return 0
+        sys.exit(0)
+    common.VERBOSE = args.verbose
+    common.WARNINGS = not args.disable_warnings
     config = check_config(args)
     config['api'] = get_api(
         config['mgmt_ip'], config['username'], config['password'], "v2.2")
+
+    if not get_api:
+        print("Please install requirements listed in requirements.txt")
+        sys.exit(1)
 
     ran_fixes = False
     if args.print_fixes:
@@ -122,11 +124,16 @@ def main(args):
         ran_fixes = True
 
     if ran_fixes:
-        print("Running post-fix checks")
+        print("Running post-fix checks\n")
     else:
-        print("Running checks")
+        print("Running checks\n")
 
-    load_checks(config, plugins=args.use_plugins)
+    print("Plugins: {}\n".format(", ".join(args.use_plugins)),
+          "Tags: {}\n".format(", ".join(args.tags)),
+          "Not Tags: {}\n".format(", ".join(args.not_tags)), sep='')
+
+    load_checks(config, plugins=args.use_plugins, tags=args.tags,
+                not_tags=args.not_tags)
     gen_report(outfile=args.out, quiet=args.quiet)
 
 
@@ -163,5 +170,13 @@ if __name__ == "__main__":
                         help="Accepts a space separated list of plugins")
     parser.add_argument("--version", action="store_true",
                         help="Print DDCT version")
+    parser.add_argument("-t", "--tags", nargs="*",
+                        help="Accepts a space separated list of tags.  "
+                             "These tags are used to select checks matching "
+                             "the tag")
+    parser.add_argument("-n", "--not-tags", nargs="*",
+                        help="Accepts as space separated list of tags.  "
+                             "These tags are used to deselect checks matching "
+                             "the tag, this takes precedence over '--tags'")
     args = parser.parse_args()
     sys.exit(main(args))

@@ -11,13 +11,13 @@ from common import vprint, exe_check, ff, parse_mconf, get_os, check_load
 from common import check
 
 
-@check("OS")
+@check("OS", "basic")
 def check_os(config):
     if not get_os():
         return ff("Unsupported Operating System", "3C47368")
 
 
-@check("ARP")
+@check("ARP", "basic")
 def check_arp(config):
     vprint("Checking ARP settings")
     if not exe_check("sysctl --all 2>/dev/null | "
@@ -30,7 +30,7 @@ def check_arp(config):
         ff("net.ipv4.conf.all.arp_ignore != 1 in sysctl", "BDB4D5D8")
 
 
-@check("IRQ")
+@check("IRQ", "basic")
 def check_irq(config):
     vprint("Checking irqbalance settings, (should be turned off)")
     if not exe_check("which systemctl"):
@@ -45,7 +45,7 @@ def check_irq(config):
             return ff("irqbalance is active", "B19D9FF1")
 
 
-@check("CPUFREQ")
+@check("CPUFREQ", "basic")
 def check_cpufreq(config):
     vprint("Checking cpufreq settings")
     if not exe_check("which cpupower"):
@@ -60,7 +60,7 @@ def check_cpufreq(config):
             "333FBD45")
 
 
-@check("Block Devices")
+@check("Block Devices", "basic")
 def check_block_devices(config):
     vprint("Checking block device settings")
     grub = "/etc/default/grub"
@@ -73,7 +73,7 @@ def check_block_devices(config):
             return ff("Scheduler is not set to noop", "47BB5083")
 
 
-@check("Multipath")
+@check("Multipath", "basic")
 def check_multipath(config):
     vprint("Checking multipath settings")
     if not exe_check("which multipath", err=False):
@@ -89,7 +89,7 @@ def check_multipath(config):
             ff("multipathd not enabled", "541C10BF")
 
 
-@check("Multipath Conf")
+@check("Multipath Conf", "basic")
 def check_multipath_conf(config):
     mfile = "/etc/multipath.conf"
     if not os.path.exists(mfile):
@@ -164,7 +164,7 @@ def check_multipath_conf(config):
                "642753A0")
 
 
-@check("MGMT")
+@check("MGMT", "basic", "connection")
 def mgmt_check(config):
     mgmt = config["mgmt_ip"]
     if not exe_check("ping -c 2 -W 1 {}".format(mgmt), err=False):
@@ -179,7 +179,7 @@ def mgmt_check(config):
             break
 
 
-@check("VIP1")
+@check("VIP1", "basic", "connection")
 def vip1_check(config):
     vip1 = config["vip1_ip"]
     if not exe_check("ping -c 2 -W 1 {}".format(vip1), err=False):
@@ -194,7 +194,7 @@ def vip1_check(config):
             break
 
 
-@check("VIP2")
+@check("VIP2", "basic", "connection")
 def vip2_check(config):
     vip2 = config.get("vip2_ip")
     if vip2 and not exe_check("ping -c 2 -W 1 {}".format(vip2), err=False):
@@ -230,11 +230,20 @@ def load_plugin_checks(plugins):
         check_list.extend(plugs[plugin].load_checks())
 
 
-def load_checks(config, plugins=None):
+def load_checks(config, plugins=None, tags=None, not_tags=None):
     if plugins:
         load_plugin_checks(plugins)
     threads = []
-    for ck in check_list:
+
+    # Filter checks to be executed based on tags passed in
+    checks = check_list
+    if tags:
+        checks = filter(lambda x: any([t in x._tags for t in tags]),
+                        checks)
+    if not_tags:
+        checks = filter(lambda x: not any([t in x._tags for t in not_tags]),
+                        checks)
+    for ck in checks:
         thread = threading.Thread(target=ck, args=(config,))
         threads.append(thread)
         thread.start()
