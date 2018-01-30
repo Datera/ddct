@@ -21,6 +21,8 @@ VERSION_RE = re.compile("^\s+VERSION = ['\"]([\d\.]+)['\"]\s*$")
 
 ETC_DEFAULT_RE = re.compile("^\[DEFAULT\]\s*$")
 ETC_SECTION_RE = re.compile("^\[[Dd]atera\]\s*$")
+UUID4_STR_RE = re.compile("[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab]"
+                          "[a-f0-9]{3}-?[a-f0-9]{12}")
 
 
 def detect_cinder_install():
@@ -85,6 +87,35 @@ def check_cinder_volume_driver(config):
         return ff("Cinder Driver version mismatch, have: {}, want: "
                   "{}".format(version, need_version), "5B6EFC71")
 
+
+@check("Cinder Image Cache Conf", "driver", "plugin", "config", "image")
+def check_cinder_image_cache_conf(config):
+    with io.open(ETC, 'r') as f:
+        section = None
+        for line in f:
+            section = ETC_SECTION_RE.match(line)
+            if section:
+                break
+        if not section:
+            return ff("[datera] section missing from "
+                      "/etc/cinder/cinder.conf", "525BAAB0")
+        cache_check = False
+        vtype_check = False
+        for line in f:
+            if 'datera_enable_image_cache' in line and 'True' in line:
+                cache_check = True
+            if ('datera_image_cache_volume_type_id' in line and
+                    UUID4_STR_RE.search(line)):
+                vtype_check = True
+        if not cache_check:
+            ff("datera_enable_image_cache not set in cinder.conf", "C5B86514")
+        if not vtype_check:
+            ff("datera_image_cache_volume_type_id is not set to a valid volume"
+               " type id in cinder.conf", "B845D5B1")
+
+
+@check("Cinder Volume Conf", "driver", "plugin", "config")
+def check_cinder_volume_conf(config):
     section = None
     with io.open(ETC, 'r') as f:
         for line in f:
@@ -161,4 +192,6 @@ def check_cinder_volume_driver(config):
 
 
 def load_checks():
-    return [check_cinder_volume_driver]
+    return [check_cinder_volume_driver,
+            check_cinder_volume_conf,
+            check_cinder_image_cache_conf]

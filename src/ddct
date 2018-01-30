@@ -158,7 +158,7 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--run-fixes", action="store_true",
                         help="Run fixes based on codes in provided report or "
                         "via manually specified codes")
-    parser.add_argument("-d", "--codes", nargs="*",
+    parser.add_argument("-d", "--codes", nargs="*", default=[],
                         help="Used for specifying codes manually when used "
                              "with the -f flag")
     parser.add_argument("-p", "--print-fixes", action="store_true",
@@ -166,15 +166,15 @@ if __name__ == "__main__":
                              "and codes")
     parser.add_argument("-l", "--list-plugins", action="store_true",
                         help="List available plugins")
-    parser.add_argument("-u", "--use-plugins", nargs="*",
+    parser.add_argument("-u", "--use-plugins", nargs="*", default=[],
                         help="Accepts a space separated list of plugins")
     parser.add_argument("--version", action="store_true",
                         help="Print DDCT version")
-    parser.add_argument("-t", "--tags", nargs="*",
+    parser.add_argument("-t", "--tags", nargs="*", default=[],
                         help="Accepts a space separated list of tags.  "
                              "These tags are used to select checks matching "
                              "the tag")
-    parser.add_argument("-n", "--not-tags", nargs="*",
+    parser.add_argument("-n", "--not-tags", nargs="*", default=[],
                         help="Accepts as space separated list of tags.  "
                              "These tags are used to deselect checks matching "
                              "the tag, this takes precedence over '--tags'")
