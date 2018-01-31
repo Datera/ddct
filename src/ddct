@@ -15,7 +15,7 @@ import sys
 
 import common
 from common import ff, gen_report, read_report, check, plugin_table
-from validators import load_checks
+from checkers import load_checks
 from fixers import run_fixes, print_fixes
 
 try:
