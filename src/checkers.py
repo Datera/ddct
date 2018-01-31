@@ -250,6 +250,19 @@ def load_checks(config, plugins=None, tags=None, not_tags=None):
     for thread in threads:
         thread.join()
 
+
+def print_tags(config, plugins=None):
+    if plugins:
+        load_plugin_checks(plugins)
+    tags = set()
+    for ck in check_list:
+        for tag in ck._tags:
+            tags.add(tag)
+    print("\nTags")
+    print("----")
+    print("\n".join(sorted(tags)))
+    print()
+
 # Possible additional checks
 # ethtool -S
 # netstat -F (retrans)

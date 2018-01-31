@@ -15,7 +15,7 @@ import sys
 
 import common
 from common import ff, gen_report, read_report, check, plugin_table
-from checkers import load_checks
+from checkers import load_checks, print_tags
 from fixers import run_fixes, print_fixes
 
 try:
@@ -111,6 +111,10 @@ def main(args):
         plugin_table()
         sys.exit(0)
 
+    if args.print_tags:
+        print_tags(config, plugins=args.use_plugins)
+        sys.exit(0)
+
     if args.in_report:
         report = read_report(args.in_report)
         if args.run_fixes:
@@ -178,5 +182,9 @@ if __name__ == "__main__":
                         help="Accepts as space separated list of tags.  "
                              "These tags are used to deselect checks matching "
                              "the tag, this takes precedence over '--tags'")
+    parser.add_argument("-b", "--print-tags", action="store_true",
+                        help="Print available tags.  Only prints tags for "
+                             "plugins loaded with '-u' as well as generally "
+                             "available tags")
     args = parser.parse_args()
     sys.exit(main(args))
