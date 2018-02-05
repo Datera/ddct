@@ -51,7 +51,11 @@ $ cd ddct/src
 $ virtualenv .ddct
 $ source .ddct/bin/activate
 
-# Install requirements
+# Install prereqs. This line will vary depending on your OS package manager
+$ sudo apt-get install python-dev libssl-dev libffi-dev -y
+
+# Upgrade pip and install requirements
+$ pip install -U pip
 $ pip install -r ../requirements.txt
 
 # Generate config file
