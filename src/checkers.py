@@ -17,6 +17,25 @@ def check_os(config):
         return ff("Unsupported Operating System", "3C47368")
 
 
+@check("ISCSI", "basic")
+def check_iscsi(config):
+    vprint("Checking ISCSI settings")
+    if not exe_check("which iscsiadm"):
+        ff("iscsiadm is not available, has open-iscsi been installed?",
+           "EFBB085C")
+
+
+@check("UDEV", "basic", "udev")
+def check_udev(config):
+    vprint("Checking udev rules config")
+    frules = "/etc/udev/rules.d/99-iscsi-luns.rules"
+    if not os.path.exists(frules):
+        ff("Datera udev rules are not installed", "1C8F2E07")
+    snum = "/sbin/fetch_device_serial_no.sh"
+    if not os.path.exists(snum):
+        ff("fetch_device_serial_no.sh is missing from /sbin", "6D03F50B")
+
+
 @check("ARP", "basic")
 def check_arp(config):
     vprint("Checking ARP settings")
@@ -54,7 +73,6 @@ def check_cpufreq(config):
                      "grep performance",
                      err=False):
         return ff(
-            "CPUFREQ",
             "No 'performance' governor found for system.  If this is a VM,"
             " governors might not be available and this check can be ignored"
             "333FBD45")
@@ -209,6 +227,8 @@ def vip2_check(config):
             break
 
 check_list = [check_os,
+              check_iscsi,
+              check_udev,
               check_arp,
               check_irq,
               check_cpufreq,
