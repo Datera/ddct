@@ -35,6 +35,7 @@ VERSION_HISTORY = """
     v1.3.0 -- Created "check" decorator and changing wf/ff function signatures
     v1.4.0 -- Changed ddct.py to ddct
     v1.5.0 -- Adding tagging support for checks
+    v1.5.1 -- Added simple UDEV and ISCSI checks
 """
 
 

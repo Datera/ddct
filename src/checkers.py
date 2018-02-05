@@ -74,7 +74,7 @@ def check_cpufreq(config):
                      err=False):
         return ff(
             "No 'performance' governor found for system.  If this is a VM,"
-            " governors might not be available and this check can be ignored"
+            " governors might not be available and this check can be ignored",
             "333FBD45")
 
 
