@@ -81,7 +81,7 @@ def check_config(args):
               "\nA sample config file can be generated with the '-g' flag."
               "".format(
                   DEFAULT_CONFIG_FILE))
-        return ff("Missing config file")
+        return ff("Missing config file", "1909B3B0")
     return config
 
 
