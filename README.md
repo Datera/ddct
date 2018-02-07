@@ -45,23 +45,15 @@ To perform basic readiness checks:
 ```
 # Clone the repository
 $ git clone http://github.com/Datera/ddct
-$ cd ddct/src
+$ cd ddct
 
-# Create workspace
-$ virtualenv .ddct
-$ source .ddct/bin/activate
+# Installation is currently only supported on Ubuntu/CentOS systems
+$ ./install.py
+DDCT is now installed.  Use '/home/ubuntu/ddct/ddct' to run DDCT.
+The generated config file is located at '/home/ubuntu/ddct/ddct.json'
 
-# Install prereqs. This line will vary depending on your OS package manager
-$ sudo apt-get install python-dev libssl-dev libffi-dev -y
-
-# Upgrade pip and install requirements
-$ pip install -U pip
-$ pip install -r ../requirements.txt
-
-# Generate config file
-$ ./ddct -g
-
-# Edit config file.  Replace the IP addresses and credentials with those of
+# Edit the generated config file.
+# Replace the IP addresses and credentials with those of
 # your Datera EDF cluster
 $ vi ddct.json
 {
@@ -153,6 +145,217 @@ Each fix will only be run one time per tool invocation.  This ensures that
 fixes can be written in a non-idempotent style.
 
 The tool should be run until all checks show "Success"
+
+----------
+What To Do
+----------
+
+Here's a basic scenario where we want to run some checks on a typical L2
+deployment with 1 Mgmt and 2 VIPs using the Cinder Volume driver with
+multipath.
+
+**NOTE**: currently this tool should be run on each bare-metal host that will
+be communicating with the cluster.  In a future release we're looking at adding
+the capability for the tool to access additional nodes within the same network
+generating a report for each, but this is a ways off.
+
+First we create our ddct.json file.  This command generates and example file
+that we can fill out
+```
+$ ./ddct -g
+Generating example config file: ddct.json
+```
+
+Now we'll edit the generated file and fill out the fields
+```
+$ vi ddct.json
+
+{
+    "cluster_root_keyfile": null,
+    "cluster_root_password": null,
+    "mgmt_ip": "1.1.1.1",
+    "password": "password",
+    "username": "admin",
+    "vip1_ip": "10.0.1.1",
+    "vip2_ip": "10.0.2.1"
+}
+```
+
+If there is no vip2 on the setup, set the value to `null`.
+`cluster_root_keyfile` and `cluster_root_password` are optional fields provided
+for when we have checks/fixes requiring cluster root access.  `username` and
+`password` are the account credentials to be used by this node.
+
+
+Once the config file is filled out, we can run a basic set of checks with the
+following invocation:
+```
+$./ddct -c ddct.json
+
+Running checks
+
+Plugins:
+Tags:
+Not Tags:
+
+WARNING: cpupower not found for kernel 3.19.0-80
+
+  You may need to install the following packages for this specific kernel:
+    linux-tools-3.19.0-80-generic
+    linux-cloud-tools-3.19.0-80-generic
+
+  You may also want to install one of the following packages to keep up to date:
+    linux-tools-generic-lts-<series>
+    linux-cloud-tools-generic-lts-<series>
+multipathd: unrecognized service
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| Test           | Status   | Reasons                                                                                                                      | IDs      | Tags       |
++================+==========+==============================================================================================================================+==========+============+
+| Block Devices  | FAIL     | Scheduler is not set to noop                                                                                                 | 47BB5083 | basic      |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| CPUFREQ        | FAIL     | No 'performance' governor found for system.  If this is a VM, governors might not be available and this check can be ignored | 333FBD45 | basic      |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| MGMT           | FAIL     | Arp state for mgmt is not 'REACHABLE'                                                                                        | BF6A912A | basic      |
+|                |          |                                                                                                                              |          | connection |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| Multipath      | FAIL     | multipathd not enabled                                                                                                       | 541C10BF | basic      |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| Multipath Conf | FAIL     | defaults section missing 'checker_timer'                                                                                     | FCFE3444 | basic      |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| UDEV           | FAIL     | Datera udev rules are not installed                                                                                          | 1C8F2E07 | basic      |
+|                |          | fetch_device_serial_no.sh is missing from /sbin                                                                              | 6D03F50B | udev       |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| VIP1           | FAIL     | Arp state for vip1 is not 'REACHABLE'                                                                                        | 3C33D70D | basic      |
+|                |          |                                                                                                                              |          | connection |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| VIP2           | FAIL     | Arp state for vip2 is not 'REACHABLE'                                                                                        | 4F6B8D91 | basic      |
+|                |          |                                                                                                                              |          | connection |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| ARP            | Success  |                                                                                                                              |          | basic      |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| CONFIG         | Success  |                                                                                                                              |          |            |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| IRQ            | Success  |                                                                                                                              |          | basic      |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| ISCSI          | Success  |                                                                                                                              |          | basic      |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| OS             | Success  |                                                                                                                              |          | basic      |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+```
+
+From the above report we can see that a few things are not configured correctly.
+DDCT tries to give a human-readable explatation for each failure so the user
+can easily determine what needs to be changed to pass the test.
+
+We won't go through all of what is required to fix the issues above instead
+we'll just show a couple of examples.
+
+First we check the OS test.  Because it reported "Success", that means this
+Operating System is one currently supported by DDCT.  If this test ever fails,
+a ticket/issue should be submitted against DDCT to add support for that OS.
+
+The "Multipath" test failed because multipathd is not enabled.  We can enable
+multipathd on a CentOS system by running `systemctl start multipathd &&
+systemctl enable multipathd`, but this won't actually solve the problem.  We
+can tell from the output before the chart that multipathd is not a recognized
+service.  So to fix this we install multipath-tools for our OS.
+
+After fixing any issue, it's a good habit to run the tool again and check
+that there are no other issues in that category
+```
+$./ddct -c ddct.json
+
+Running checks
+
+Plugins:
+Tags:
+Not Tags:
+
+WARNING: cpupower not found for kernel 3.19.0-80
+
+  You may need to install the following packages for this specific kernel:
+    linux-tools-3.19.0-80-generic
+    linux-cloud-tools-3.19.0-80-generic
+
+  You may also want to install one of the following packages to keep up to date:
+    linux-tools-generic-lts-<series>
+    linux-cloud-tools-generic-lts-<series>
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| Test           | Status   | Reasons                                                                                                                      | IDs      | Tags       |
++================+==========+==============================================================================================================================+==========+============+
+| Block Devices  | FAIL     | Scheduler is not set to noop                                                                                                 | 47BB5083 | basic      |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| CPUFREQ        | FAIL     | No 'performance' governor found for system.  If this is a VM, governors might not be available and this check can be ignored | 333FBD45 | basic      |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| MGMT           | FAIL     | Arp state for mgmt is not 'REACHABLE'                                                                                        | BF6A912A | basic      |
+|                |          |                                                                                                                              |          | connection |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| Multipath Conf | FAIL     | defaults section missing 'checker_timer'                                                                                     | FCFE3444 | basic      |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| UDEV           | FAIL     | Datera udev rules are not installed                                                                                          | 1C8F2E07 | basic      |
+|                |          | fetch_device_serial_no.sh is missing from /sbin                                                                              | 6D03F50B | udev       |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| VIP1           | FAIL     | Arp state for vip1 is not 'REACHABLE'                                                                                        | 3C33D70D | basic      |
+|                |          |                                                                                                                              |          | connection |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| VIP2           | FAIL     | Arp state for vip2 is not 'REACHABLE'                                                                                        | 4F6B8D91 | basic      |
+|                |          |                                                                                                                              |          | connection |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| ARP            | Success  |                                                                                                                              |          | basic      |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| CONFIG         | Success  |                                                                                                                              |          |            |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| IRQ            | Success  |                                                                                                                              |          | basic      |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| ISCSI          | Success  |                                                                                                                              |          | basic      |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| Multipath      | Success  |                                                                                                                              |          | basic      |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+| OS             | Success  |                                                                                                                              |          | basic      |
++----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
+```
+
+Now we can see that the "Multipath" category is reporting "Success", but the
+"Multipath Conf" category still has issues.
+
+Continue addressing issues and re-running the tool until a full clear is
+reached.  If for some reason the tool is reporting an error when the reported
+issue has been address, please file a bug against DDCT with the following
+information:
+
+Category (eg. Multipath)
+Operating System (eg. CentOS)
+Check Code (eg. 541C10BF)
+Actions taken to address issue
+
+so hopefully we can rectify the check or improve the given reasons for failure.
+
+If we want to list the available plugins for DDCT, we can easily do so via
+the "--list-plugins" flag.
+
+```
+$ ./src/ddct -c ddct.json --list-plugins
++-----------------+
+| Check Plugins   |
++=================+
+| performance     |
++-----------------+
+| docker          |
++-----------------+
+| mtu             |
++-----------------+
+| cinder_volume   |
++-----------------+
++---------------+
+| Fix Plugins   |
++===============+
+| cinder_volume |
++---------------+
+```
+**NOTE**: Not all of the above plugins are available as many are WIP.
+
+Using a plugin is as simple as providing it via the "--use-plugins" flag
+
 
 ---------------
 Writing Plugins
