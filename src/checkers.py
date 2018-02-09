@@ -82,11 +82,15 @@ def check_cpufreq(config):
 def check_block_devices(config):
     vprint("Checking block device settings")
     grub = "/etc/default/grub"
+    if not os.path.exists(grub):
+        return ff("Could not find default grub file at {}".format(grub),
+                  "6F7B6A25")
     with io.open(grub, "r") as f:
         line = filter(lambda x: x.startswith("GRUB_CMDLINE_LINUX_DEFAULT="),
                       f.readlines())
         if len(line) != 1:
-            return ff("Grub file appears non-standard", "A65B6D97")
+            return ff("GRUB_CMDLINE_LINUX_DEFAULT missing from GRUB file",
+                      "A65B6D97")
         if "elevator=noop" not in line[0]:
             return ff("Scheduler is not set to noop", "47BB5083")
 
