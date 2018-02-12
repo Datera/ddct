@@ -4,7 +4,7 @@ from __future__ import (print_function, unicode_literals, division,
 import re
 import subprocess
 
-from common import vprint, exe, exe_check, ff, check
+from common import vprint, exe, exe_check, ff, check, parse_route_table
 
 import ipaddress
 
@@ -24,17 +24,11 @@ iface_dict = {"MGMT": "mgt1",
 
 def get_interface_for_ip(ip):
     ipobj = ipaddress.ip_address(str(ip))
-    found = None
-    for entry in exe("ip ad | grep inet | awk '{print $2}'").splitlines():
-        try:
-            iface = ipaddress.ip_interface(str(entry))
-        except ValueError:
-            continue
-        if ipobj in iface.network:
-            found = iface
-    if not found:
-        return None
-    return exe("ip ad | grep {} | awk '{{print $NF}}'".format(found)).strip()
+    rt = parse_route_table()
+    for net, iface in rt:
+        if ipobj in net.network:
+            return iface
+    None
 
 
 def check_mtu(name, ip, config):

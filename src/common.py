@@ -11,9 +11,11 @@ import re
 import subprocess
 
 try:
+    import ipaddress
     import paramiko
     from tabulate import tabulate
 except ImportError:
+    ipaddress = None
     tabulate = None
     paramiko = None
 
@@ -353,3 +355,19 @@ def cluster_cmd(cmd, config, fail_ok=False):
                 exit_status,
                 stderr.read()))
     return result
+
+
+def parse_route_table():
+    """
+    Won't work on BSD
+    """
+    results = []
+    data = exe("route --fib")
+    for line in data.splitlines()[2:]:
+        dest, _, mask, _, _, _, _, iface = line.strip().split()
+        try:
+            ip = ipaddress.ip_interface("/".join((dest, mask)))
+        except ValueError:
+            continue
+        results.append((ip, iface))
+    return results
