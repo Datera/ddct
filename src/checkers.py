@@ -8,7 +8,7 @@ import time
 import threading
 
 from common import vprint, exe_check, ff, parse_mconf, get_os, check_load
-from common import check
+from common import check, wf
 
 
 @check("OS", "basic")
@@ -233,6 +233,14 @@ def vip2_check(config):
                "4F6B8D91")
             break
 
+
+@check("CALLHOME", "basic", "setup")
+def callhome_check(config):
+    api = config["api"]
+    if not api.system.get()['callhome_enabled']:
+        wf("Callhome is not enabled", "675E2887")
+
+
 check_list = [check_os,
               check_iscsi,
               check_udev,
@@ -244,7 +252,8 @@ check_list = [check_os,
               check_multipath_conf,
               mgmt_check,
               vip1_check,
-              vip2_check]
+              vip2_check,
+              callhome_check]
 
 
 def load_plugin_checks(plugins):
