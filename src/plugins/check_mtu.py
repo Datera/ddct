@@ -26,7 +26,7 @@ def get_interface_for_ip(ip):
     ipobj = ipaddress.ip_address(str(ip))
     rt = parse_route_table()
     for net, iface in rt:
-        if ipobj in net.network:
+        if ipobj in net:
             return iface
     None
 

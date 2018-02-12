@@ -19,6 +19,12 @@ except ImportError:
     tabulate = None
     paramiko = None
 
+# Python 2/3 compatibility
+try:
+    str = unicode
+except NameError:
+    pass
+
 
 def apply_color(value_for_coloring=None, color=None):
     suffix = "\x1b[0m"
@@ -47,6 +53,9 @@ CHECK_GLOB = "check_*.py"
 
 FIX_RE = re.compile(".*fix_(.*)\.py")
 FIX_GLOB = "fix_*.py"
+
+IP_ROUTE_RE = re.compile(
+    "^(?P<net>[\w|\.|:|/]+).*dev\s(?P<iface>[\w|\.|:]+).*?$")
 
 
 class Report(object):
@@ -358,16 +367,14 @@ def cluster_cmd(cmd, config, fail_ok=False):
 
 
 def parse_route_table():
-    """
-    Won't work on BSD
-    """
     results = []
-    data = exe("route --fib")
-    for line in data.splitlines()[2:]:
-        dest, _, mask, _, _, _, _, iface = line.strip().split()
-        try:
-            ip = ipaddress.ip_interface("/".join((dest, mask)))
-        except ValueError:
-            continue
-        results.append((ip, iface))
+    data = exe("ip route show")
+    for line in data.splitlines():
+        match = IP_ROUTE_RE.match(line)
+        if match:
+            try:
+                net = ipaddress.ip_network(str(match.group("net")))
+            except ValueError:
+                continue
+            results.append((net, match.group("iface")))
     return results
