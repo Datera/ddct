@@ -230,9 +230,9 @@ def parse_mconf(data):
 
 
 def get_os():
-    if exe_check("which apt-get", err=False):
+    if exe_check("which apt-get > /dev/null 2>&1", err=False):
         return "ubuntu"
-    if exe_check("which yum", err=False):
+    if exe_check("which yum > /dev/null 2>&1", err=False):
         return "centos"
 
 
@@ -364,6 +364,11 @@ def cluster_cmd(cmd, config, fail_ok=False):
                 exit_status,
                 stderr.read()))
     return result
+
+
+def is_l3(config):
+    api = config['api']
+    return api.system.get()['l3_enabled']
 
 
 def parse_route_table():

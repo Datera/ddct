@@ -197,7 +197,8 @@ def mgmt_check(config):
         timeout -= 1
         time.sleep(1)
         if timeout < 0:
-            ff("Arp state for mgmt is not 'REACHABLE'", "BF6A912A")
+            ff("Arp state for mgmt [{}] is not 'REACHABLE'".format(mgmt),
+               "BF6A912A")
             break
 
 
@@ -212,7 +213,8 @@ def vip1_check(config):
         timeout -= 1
         time.sleep(1)
         if timeout < 0:
-            ff("Arp state for vip1 is not 'REACHABLE'", "3C33D70D")
+            ff("Arp state for vip1 [{}] is not 'REACHABLE'".format(vip1),
+               "3C33D70D")
             break
 
 
@@ -227,7 +229,8 @@ def vip2_check(config):
         timeout -= 1
         time.sleep(1)
         if timeout < 0:
-            ff("Arp state for vip2 is not 'REACHABLE'", "4F6B8D91")
+            ff("Arp state for vip2 [{}] is not 'REACHABLE'".format(vip2),
+               "4F6B8D91")
             break
 
 check_list = [check_os,
