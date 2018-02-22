@@ -10,6 +10,11 @@ import threading
 from common import vprint, exe_check, ff, parse_mconf, get_os, check_load
 from common import check, wf
 
+try:
+    from tabulate import tabulate
+except ImportError:
+    tabulate = None
+
 
 @check("OS", "basic")
 def check_os(config):
@@ -294,10 +299,8 @@ def print_tags(config, plugins=None):
     for ck in check_list:
         for tag in ck._tags:
             tags.add(tag)
-    print("\nTags")
-    print("----")
-    print("\n".join(sorted(tags)))
-    print()
+    print(tabulate(sorted(map(lambda x: [x], tags)), headers=["Tags"],
+                   tablefmt="grid"))
 
 # Possible additional checks
 # ethtool -S

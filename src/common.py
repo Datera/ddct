@@ -54,6 +54,9 @@ CHECK_GLOB = "check_*.py"
 FIX_RE = re.compile(".*fix_(.*)\.py")
 FIX_GLOB = "fix_*.py"
 
+INSTALL_RE = re.compile(".*install_(.*)\.py")
+INSTALL_GLOB = "install_*.py"
+
 IP_ROUTE_RE = re.compile(
     "^(?P<net>[\w|\.|:|/]+).*dev\s(?P<iface>[\w|\.|:]+).*?$")
 
@@ -200,13 +203,23 @@ def fix_load():
     return load_plugins(FIX_RE, FIX_GLOB)
 
 
-def plugin_table():
+def install_load():
+    return load_plugins(INSTALL_RE, INSTALL_GLOB)
+
+
+def check_plugin_table():
     checks = map(lambda x: [x], check_load())
+    print(tabulate(checks, headers=["Check Plugins"], tablefmt="grid"))
+
+
+def fix_plugin_table():
     fixes = map(lambda x: [x], fix_load())
-    print("\n".join((tabulate(checks, headers=["Check Plugins"],
-                     tablefmt="grid"),
-                     tabulate(fixes, headers=["Fix Plugins"],
-                     tablefmt="grid"))))
+    print(tabulate(fixes, headers=["Fix Plugins"], tablefmt="grid"))
+
+
+def install_plugin_table():
+    installs = map(lambda x: [x], install_load())
+    print(tabulate(installs, headers=["Install Plugins"], tablefmt="grid"))
 
 
 def parse_mconf(data):
