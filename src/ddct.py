@@ -62,6 +62,7 @@ def get_config(args):
         sys.exit(1)
     config['api'] = get_api(
         config['mgmt_ip'], config['username'], config['password'], "v2.2")
+    return config
 
 
 def generate_config_file():
