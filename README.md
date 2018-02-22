@@ -88,7 +88,7 @@ with each test for use by the fixer to run specific fixes for each.
 Below is an example output.  Tests with multiple failure conditions will have
 all currently check-able reasons listed.
 ```
-(.ddct) ubuntu@master-xenial-bfd6:~/ddct/src$ ./ddct -c ddct.json
+(.ddct) ubuntu@master-xenial-bfd6:~/ddct/src$ ./ddct check ddct.json
 Running checks
 +----------------+----------+----------------------------------------------------------------------------------+----------+
 | Test           | Status   | Reasons                                                                          | IDs      |
@@ -133,10 +133,9 @@ Running checks
 This report can then be fed back into the tool via the following invocation:
 
 ```
-$ ./ddct -c ddct.json -i test-output.txt -f
+$ ./ddct fix ddct.json -i test-output.txt
 ```
 The -i flag lets you specify a file which has a report like the one above and
-the -f flag indicates that the tool should run fixes based on the report output
 
 If a particular fix should NOT be run, then simply delete the line with its ID
 in the report.
@@ -181,7 +180,7 @@ $ vi ddct.json
 }
 ```
 
-If there is no vip2 on the setup, set the value to `null`.
+If there is no vip2 on the setup, set the value to `null` or delete the line.
 `cluster_root_keyfile` and `cluster_root_password` are optional fields provided
 for when we have checks/fixes requiring cluster root access.  `username` and
 `password` are the account credentials to be used by this node.
@@ -190,7 +189,7 @@ for when we have checks/fixes requiring cluster root access.  `username` and
 Once the config file is filled out, we can run a basic set of checks with the
 following invocation:
 ```
-$./ddct -c ddct.json
+$./ddct check ddct.json
 
 Running checks
 
@@ -198,16 +197,6 @@ Plugins:
 Tags:
 Not Tags:
 
-WARNING: cpupower not found for kernel 3.19.0-80
-
-  You may need to install the following packages for this specific kernel:
-    linux-tools-3.19.0-80-generic
-    linux-cloud-tools-3.19.0-80-generic
-
-  You may also want to install one of the following packages to keep up to date:
-    linux-tools-generic-lts-<series>
-    linux-cloud-tools-generic-lts-<series>
-multipathd: unrecognized service
 +----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
 | Test           | Status   | Reasons                                                                                                                      | IDs      | Tags       |
 +================+==========+==============================================================================================================================+==========+============+
@@ -263,7 +252,7 @@ service.  So to fix this we install multipath-tools for our OS.
 After fixing any issue, it's a good habit to run the tool again and check
 that there are no other issues in that category
 ```
-$./ddct -c ddct.json
+$./ddct check ddct.json
 
 Running checks
 
@@ -271,15 +260,6 @@ Plugins:
 Tags:
 Not Tags:
 
-WARNING: cpupower not found for kernel 3.19.0-80
-
-  You may need to install the following packages for this specific kernel:
-    linux-tools-3.19.0-80-generic
-    linux-cloud-tools-3.19.0-80-generic
-
-  You may also want to install one of the following packages to keep up to date:
-    linux-tools-generic-lts-<series>
-    linux-cloud-tools-generic-lts-<series>
 +----------------+----------+------------------------------------------------------------------------------------------------------------------------------+----------+------------+
 | Test           | Status   | Reasons                                                                                                                      | IDs      | Tags       |
 +================+==========+==============================================================================================================================+==========+============+
@@ -334,7 +314,7 @@ If we want to list the available plugins for DDCT, we can easily do so via
 the "--list-plugins" flag.
 
 ```
-$ ./src/ddct -c ddct.json --list-plugins
+$ ./ddct check ddct.json --list-plugins
 +-----------------+
 | Check Plugins   |
 +=================+
@@ -346,6 +326,10 @@ $ ./src/ddct -c ddct.json --list-plugins
 +-----------------+
 | cinder_volume   |
 +-----------------+
+```
+This can also be done for fix plugins
+```
+$ ./ddct fix ddct.json --list-plugins
 +---------------+
 | Fix Plugins   |
 +===============+
@@ -504,5 +488,9 @@ no fix.
 Now that we're all done with "my_driver" checks and fixes, we can load them
 via the following:
 ```bash
-$ ./ddct -c ddct.json --use-plugin my_driver
+$ ./ddct check ddct.json --use-plugin my_driver
 ```
+```bash
+$ ./ddct fix ddct.json --use-plugin my_driver
+```
+Note the above invocations are different for check and fix plugins
