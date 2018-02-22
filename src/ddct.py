@@ -106,6 +106,10 @@ def none(args):
 
 
 def checker(args):
+    # Global flags
+    common.VERBOSE = args.verbose
+    common.WARNINGS = not args.disable_warnings
+
     if args.list_plugins:
         check_plugin_table()
         sys.exit(0)
@@ -125,6 +129,9 @@ def checker(args):
 
 
 def fixer(args):
+    # Global flags
+    common.VERBOSE = args.verbose
+
     if args.print:
         print_fixes(args.use_plugins)
         sys.exit(0)
@@ -150,6 +157,9 @@ def fixer(args):
 
 
 def installer(args):
+    # Global flags
+    common.VERBOSE = args.verbose
+
     # config = get_config(args)
     if args.list_plugins:
         install_plugin_table()
@@ -236,10 +246,6 @@ if __name__ == "__main__":
                                      "plugins")
 
     args = parser.parse_args()
-
-    # Global flags
-    common.VERBOSE = args.verbose
-    common.WARNINGS = not args.disable_warnings
 
     if not get_api:
         print("Please install requirements listed in requirements.txt")
