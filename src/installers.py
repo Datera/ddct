@@ -1,48 +1,25 @@
 from __future__ import (print_function, unicode_literals, division,
                         absolute_import)
 
-import threading
+import sys
+
+from common import install_load
 
 install_list = []
 
 
 def load_plugin_installers(plugins):
-    install_list.extend()
+    plugs = install_load()
+    for plugin in plugins:
+        if plugin not in plugs:
+            print("Unrecognized install plugin requested:", plugin)
+            print("Available install plugins:", ", ".join(plugins.keys()))
+            sys.exit(1)
+        install_list.extend(plugs[plugin].install)
 
 
-def load_checks(config, plugins=None, tags=None, not_tags=None):
-    if plugins:
-        load_plugin_installers(plugins)
-    threads = []
-
-    # Filter checks to be executed based on tags passed in
-    checks = install_list
-    if tags:
-        checks = filter(lambda x: any([t in x._tags for t in tags]),
-                        checks)
-    if not_tags:
-        checks = filter(lambda x: not any([t in x._tags for t in not_tags]),
-                        checks)
-    for ck in checks:
-        thread = threading.Thread(target=ck, args=(config,))
-        threads.append(thread)
-        thread.start()
-    for thread in threads:
-        thread.join()
-
-
-def print_tags(config, plugins=None):
-    if plugins:
-        load_plugin_installers(plugins)
-    tags = set()
-    for install in install_list:
-        for tag in install._tags:
-            tags.add(tag)
-    print("\nTags")
-    print("----")
-    print("\n".join(sorted(tags)))
-    print()
-
-# Possible additional checks
-# ethtool -S
-# netstat -F (retrans)
+def run_installers(config, plugins):
+    results = []
+    load_plugin_installers(plugins)
+    for installer in install_list:
+        results.append(installer(config))

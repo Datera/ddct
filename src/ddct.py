@@ -18,6 +18,7 @@ from common import ff, gen_report, read_report, check
 from common import check_plugin_table, fix_plugin_table, install_plugin_table
 from checkers import load_checks, print_tags
 from fixers import run_fixes, print_fixes
+from installers import run_installers
 
 try:
     from dfs_sdk import get_api
@@ -161,10 +162,16 @@ def installer(args):
     # Global flags
     common.VERBOSE = args.verbose
 
-    # config = get_config(args)
     if args.list_plugins:
         install_plugin_table()
         sys.exit(0)
+
+    if not args.use_plugins:
+        print("At least one plugin must be specified via '-u'")
+        sys.exit(1)
+
+    config = get_config(args)
+    run_installers(config, args.use_plugins)
 
 
 if __name__ == "__main__":
@@ -204,12 +211,12 @@ if __name__ == "__main__":
                                            "provided")
         p.add_argument("-q", "--quiet", action="store_true",
                        help="No output to stdout")
+        p.add_argument("-u", "--use-plugins", nargs="*", default=[],
+                       help="Accepts a space separated list of plugins")
+        p.add_argument("-l", "--list-plugins", action="store_true",
+                       help="List available plugins")
 
     # Check Parser Arguments
-    check_parser.add_argument("-l", "--list-plugins", action="store_true",
-                              help="List available plugins")
-    check_parser.add_argument("-u", "--use-plugins", nargs="*", default=[],
-                              help="Accepts a space separated list of plugins")
     check_parser.add_argument("-w", "--disable-warnings", action="store_true",
                               help="Disables showing warnings in output")
     check_parser.add_argument("-t", "--tags", nargs="*", default=[],
@@ -227,10 +234,6 @@ if __name__ == "__main__":
                                    "generally available tags")
 
     # Fix Parser Arguments
-    fix_parser.add_argument("-l", "--list-plugins", action="store_true",
-                            help="List available plugins")
-    fix_parser.add_argument("-u", "--use-plugins", nargs="*", default=[],
-                            help="Accepts a space separated list of plugins")
     fix_parser.add_argument("-i", "--in-report", help="Report file location "
                                                       "to read in")
     fix_parser.add_argument("-d", "--codes", nargs="*", default=[],
@@ -240,11 +243,7 @@ if __name__ == "__main__":
                                  "fixes and codes")
 
     # Install Parser Arguments
-    install_parser.add_argument("-l", "--list-plugins", action="store_true",
-                                help="List available plugins")
-    install_parser.add_argument("-u", "--use-plugins", nargs="*", default=[],
-                                help="Accepts a space separated list of "
-                                     "plugins")
+    pass
 
     args = parser.parse_args()
 
