@@ -101,10 +101,7 @@ def version(args):
 
 
 def none(args):
-    # Generate or load config file
-    if args.generate_config_file:
-        generate_config_file()
-        sys.exit(0)
+    return
 
 
 def checker(args):
@@ -177,6 +174,13 @@ def installer(args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("-g", "--generate-config-file", action="store_true",
+                        help="Generate config file example")
+
+    kargs = parser.parse_known_args()[0]
+    if kargs.generate_config_file:
+        generate_config_file()
+        sys.exit(0)
     subparsers = parser.add_subparsers(
             title="Subcommands")
 
@@ -195,9 +199,6 @@ if __name__ == "__main__":
     # Version parser arguments
     version_parser.add_argument("--history", action="store_true",
                                 help="Show version history")
-
-    parser.add_argument("-g", "--generate-config-file", action="store_true",
-                        help="Generate config file example")
 
     # Common arguments
     for p in [check_parser, fix_parser, install_parser]:
