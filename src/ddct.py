@@ -173,17 +173,19 @@ def installer(args):
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-g", "--generate-config-file", action="store_true",
-                        help="Generate config file example")
+    top_parser = argparse.ArgumentParser(add_help=False)
+    top_parser.add_argument("-g", "--generate-config-file",
+                            action="store_true",
+                            help="Generate config file example")
 
-    kargs = parser.parse_known_args()[0]
+    kargs, rem = top_parser.parse_known_args()
     if kargs.generate_config_file:
         generate_config_file()
         sys.exit(0)
 
-    subparsers = parser.add_subparsers(
-            title="Subcommands")
+    parser = argparse.ArgumentParser(parents=[top_parser])
+
+    subparsers = parser.add_subparsers(help="Subcommands")
 
     version_parser = subparsers.add_parser("version", help="Show version")
     version_parser.set_defaults(func=version)
