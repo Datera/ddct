@@ -181,6 +181,7 @@ if __name__ == "__main__":
     if kargs.generate_config_file:
         generate_config_file()
         sys.exit(0)
+
     subparsers = parser.add_subparsers(
             title="Subcommands")
 

@@ -76,7 +76,10 @@ class Report(object):
     def add_success(self, name, tags):
         if name not in self.failure and name not in self.warning:
             self.success.append(name)
-            self.tags[name] = tags
+            if name not in tags:
+                self.tags[name] = set()
+            for tag in tags:
+                self.tags[name].add(tag)
 
     def add_warning(self, name, reason, uid, tags):
         if WARNINGS:
@@ -86,7 +89,10 @@ class Report(object):
             self.warning[name].append(reason)
             self.warning_id[name].append(uid)
             self.warning_by_id[uid] = (name, reason)
-            self.tags[name] = tags
+            if name not in tags:
+                self.tags[name] = set()
+            for tag in tags:
+                self.tags[name].add(tag)
 
     def add_failure(self, name, reason, uid, tags):
         if name not in self.failure:
@@ -95,7 +101,10 @@ class Report(object):
         self.failure[name].append(reason)
         self.failure_id[name].append(uid)
         self.failure_by_id[uid] = (name, reason)
-        self.tags[name] = tags
+        if name not in tags:
+            self.tags[name] = set()
+        for tag in tags:
+            self.tags[name].add(tag)
 
     def generate(self):
         s = list(map(lambda x: (
@@ -103,21 +112,21 @@ class Report(object):
             SUCCESS,
             "",
             "",
-            "\n".join(self.tags[x])),
+            "\n".join(sorted(self.tags[x]))),
             sorted(self.success)))
         w = list(map(lambda x: (
             x[0],
             WARNING,
             "\n".join(x[1]),
             "\n".join(self.warning_id[x[0]]),
-            "\n".join(self.tags[x[0]])),
+            "\n".join(sorted(self.tags[x[0]]))),
             sorted(self.warning.items())))
         f = list(map(lambda x: (
             x[0],
             FAILURE,
             "\n".join(x[1]),
             "\n".join(self.failure_id[x[0]]),
-            "\n".join(self.tags[x[0]])),
+            "\n".join(sorted(self.tags[x[0]]))),
             sorted(self.failure.items())))
         result = tabulate(
             f + w + s,
@@ -130,6 +139,7 @@ class Report(object):
         if WARNINGS:
             result.extend(self.warning_by_id.keys())
         result.extend(self.failure_by_id.keys())
+        print(result)
         return result
 
 
@@ -307,17 +317,18 @@ def read_report(infile):
             elif header_skip:
                 header_skip = False
                 continue
-            test, result, reason, uid = list(
+            test, result, reason, uid, tags = list(
                 map(lambda x: x.strip(), line.split("|")))[1:-1]
+            print(test, result, reason, uid, tags, sep=", ")
             if result == "":
                 result = prevr
                 test = prevt
             if result == FAILURE:
-                in_report.add_failure(test, reason, uid, [])
+                in_report.add_failure(test, reason, uid, tags.split())
             elif result == WARNING:
-                in_report.add_warning(test, reason, uid, [])
+                in_report.add_warning(test, reason, uid, tags.split())
             elif result == SUCCESS:
-                in_report.add_success(test, [])
+                in_report.add_success(test, tags.split())
             prevr = result
             prevt = test
     return in_report
