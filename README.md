@@ -57,10 +57,6 @@ The generated config file is located at '/home/ubuntu/ddct/ddct.json'
 # your Datera EDF cluster
 $ vi ddct.json
 {
-    "cinder-volume": {
-        "location": null,
-        "version": "v2.7.2"
-    },
     "mgmt_ip": "172.19.1.41",
     "password": "password",
     "username": "admin",
@@ -69,7 +65,7 @@ $ vi ddct.json
 }
 
 # Finally, run the tool
-$ ./ddct -c ddct.json
+$ ./ddct check ddct.json
 ```
 
 The report will have the following format:
@@ -158,11 +154,12 @@ be communicating with the cluster.  In a future release we're looking at adding
 the capability for the tool to access additional nodes within the same network
 generating a report for each, but this is a ways off.
 
-First we create our ddct.json file.  This command generates and example file
-that we can fill out
+First we install ddct, this will create an executable for our system and
+generate a json file that we can fill out.
 ```
-$ ./ddct -g
-Generating example config file: ddct.json
+$ ./install.py
+DDCT is now installed.  Use '/opt/stack/ddct/ddct' to run DDCT.
+The generated config file is located at '/opt/stack/ddct/ddct.json'
 ```
 
 Now we'll edit the generated file and fill out the fields
