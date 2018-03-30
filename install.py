@@ -70,8 +70,8 @@ def main(args):
                 return 1
     if not os.path.isdir(VENV):
         exe("virtualenv {}".format(VENV))
-        exe_pip("install -U pip")
-        exe_pip("install -U -r {}".format(REQUIREMENTS))
+    exe_pip("install -U pip")
+    exe_pip("install -U -r {}".format(REQUIREMENTS))
 
     if not os.path.isfile(DDCT):
         # Create ddct executable
