@@ -6,66 +6,47 @@ import os
 import re
 import subprocess
 
-import requests
-
-from common import vprint, exe, ff, wf, check
+from common import vprint, exe, ff, wf, check, get_latest_driver_version
+from common import UUID4_STR_RE
 
 ETC = "/etc/cinder/cinder.conf"
 PACKAGE_INSTALL = "/usr/lib/python2.7/dist-packages/cinder"
+PACKAGE_INSTALL_2 = "/usr/local/lib/python2.7/dist-packages/cinder"
 SITE_PACKAGE_INSTALL = "/usr/lib/python2.7/site-packages/cinder"
+SITE_PACKAGE_INSTALL_2 = "/usr/local/lib/python2.7/site-packages/cinder"
 DEVSTACK_INSTALL = "/opt/stack/cinder/cinder"
 TAGS = "https://api.github.com/repos/Datera/cinder-driver/tags"
-TAG_RE = re.compile("\d+\.\d+\.\d+")
 
 VERSION_RE = re.compile("^\s+VERSION = ['\"]([\d\.]+)['\"]\s*$")
 
 ETC_DEFAULT_RE = re.compile("^\[DEFAULT\]\s*$")
 ETC_SECTION_RE = re.compile("^\[[Dd]atera\]\s*$")
-UUID4_STR_RE = re.compile("[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab]"
-                          "[a-f0-9]{3}-?[a-f0-9]{12}")
+LOCATIONS = [PACKAGE_INSTALL, PACKAGE_INSTALL_2, SITE_PACKAGE_INSTALL,
+             SITE_PACKAGE_INSTALL_2, DEVSTACK_INSTALL]
 
 
 def detect_cinder_install():
-    if os.path.isdir(PACKAGE_INSTALL):
-        return PACKAGE_INSTALL
-    elif os.path.isdir(DEVSTACK_INSTALL):
-        return DEVSTACK_INSTALL
-    elif os.path.isdir(SITE_PACKAGE_INSTALL):
-        return SITE_PACKAGE_INSTALL
+    for path in LOCATIONS:
+        if os.path.isdir(path):
+            return path
     else:
         result = None
         try:
             vprint("Normal cinder install not found, searching for driver")
             result = exe("sudo find / -name datera_iscsi.py")
-            if not result or result.isspace():
-                raise ValueError()
+            if not result or result.isspace() or "cinder-driver" in result:
+                raise ValueError("Cinder installation not found")
             return result.strip().replace(
                 "/volume/drivers/datera/datera_iscsi.py", "")
         except (subprocess.CalledProcessError, ValueError):
             raise EnvironmentError(
-                "Cinder installation not found. Usual locations: [{}, {}]"
-                "".format(PACKAGE_INSTALL, DEVSTACK_INSTALL))
-
-
-def get_latest_driver_version():
-    found = []
-    weighted_found = []
-    tags = requests.get(TAGS).json()
-    for tag in tags:
-        tag = tag['name'].strip("v")
-        if TAG_RE.match(tag):
-            found.append(tag)
-    for f in found:
-        # Major, minor, patch
-        M, m, p = f.split(".")
-        value = int(M) * 10000 + int(m) * 100 + int(p)
-        weighted_found.append((value, "v" + f))
-    return sorted(weighted_found)[-1][1]
+                "Cinder installation not found. Usual locations: {}"
+                "".format(LOCATIONS))
 
 
 @check("Cinder Volume", "driver", "plugin")
 def check_cinder_volume_driver(config):
-    version = get_latest_driver_version()
+    version = get_latest_driver_version(TAGS)
     need_version = version.strip("v")
     loc = detect_cinder_install()
     dfile = os.path.join(loc, "volume/drivers/datera/datera_iscsi.py")
