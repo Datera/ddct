@@ -8,22 +8,30 @@ import os
 
 from dfs_sdk import ApiNotFoundError
 
-from common import vprint, exe_check, ff, check
+from common import vprint, exe, exe_check, wf, ff, check
 
 CONFIG_FILE = "/root/.datera-config-file"
+PLUGIN = "dateraiodev/docker-driver"
 
 
 @check("Docker Volume", "driver", "plugin")
 def check_docker_volume(config):
     vprint("Checking docker volume driver")
-    if not exe_check("docker ps"):
+    if not exe_check("docker ps >/dev/null 2>&1"):
         return ff("Docker is not installed", "42BAAC76")
-    if not exe_check("docker plugin ls | grep dateraiodev/docker-driver"):
+    if exe_check("docker plugin ls | grep {}".format(PLUGIN)):
         return ff("Datera Docker plugin is not installed", "6C531C5D")
+    plugin = exe("docker plugin ls | grev -v DESCRIPTION | "
+                 "grep {}".format(PLUGIN))
+    if len(plugin.strip().split('\n')) > 1:
+        wf("More than one version of Datera docker driver installed",
+           "B3BF691D")
+    if 'enabled' not in plugin or 'disabled' in plugin:
+        ff("Datera docker plugin is not enabled")
     test_name = "ddct-test1"
     if not exe_check(
-            "docker volume create -d dateraiodev/docker-driver --name "
-            "{} --opt replica=1 --opt size=1".format(test_name)):
+            "docker volume create -d {} --name {} --opt replica=1 --opt "
+            "size=1".format(PLUGIN, test_name)):
         return ff("Could not create a volume with the Datera Docker plugin",
                   "621A6F51")
     api = config['api']
@@ -54,4 +62,5 @@ def check_docker_config(config):
 
 
 def load_checks():
-    return [check_docker_volume, check_docker_config]
+    return [check_docker_volume,
+            check_docker_config]
