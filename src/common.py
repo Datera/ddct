@@ -41,8 +41,14 @@ def get_latest_driver_version(tag_url):
             found.append(tag)
     for f in found:
         # Major, minor, patch
-        M, m, p = f.split(".")
-        value = int(M) * 10000 + int(m) * 100 + int(p)
+        try:
+            # Version format: M.m.p
+            M, m, p = f.split(".")
+            value = int(M) * 10000 + int(m) * 100 + int(p)
+        except ValueError:
+            # Date format: YYYY.M.d.n
+            Y, M, d, n = f.split(".")
+            value = int(Y) * 1000000 + int(M) * 10000 + int(d) * 100 + int(n)
         weighted_found.append((value, "v" + f))
     return sorted(weighted_found)[-1][1]
 
