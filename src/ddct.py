@@ -46,15 +46,12 @@ VERSION_HISTORY = """
 
 
 CONFIG = {"mgmt_ip": "1.1.1.1",
-          "vip1_ip": "10.0.1.1",
-          "vip2_ip": "10.0.2.1",
+          # "vip1_ip": "10.0.1.1",
+          # "vip2_ip": "10.0.2.1",
           "username": "admin",
-          "password": "password",
-          "cluster_root_password": None,
-          "cluster_root_keyfile": None}
+          "password": "password"}
 
 GEN_CONFIG_FILE = "ddct.json"
-# DEFAULT_CONFIG_FILE = ".ddct.json"
 
 
 def get_config(args):
@@ -62,8 +59,13 @@ def get_config(args):
     if not config:
         print("No valid config found")
         sys.exit(1)
-    config['api'] = get_api(
+    api = get_api(
         config['mgmt_ip'], config['username'], config['password'], "v2.2")
+    config['api'] = api
+    access_paths = api.system.network.access_vip.get()['network_paths']
+    config['vip1_ip'] = access_paths[0]['ip']
+    if len(access_paths) > 1:
+        config['vip2_ip'] = access_paths[1]['ip']
     return config
 
 
