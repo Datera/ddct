@@ -125,7 +125,7 @@ def checker(args):
               "Not Tags: {}\n".format(", ".join(args.not_tags)), sep='')
     load_checks(config, plugins=args.use_plugins, tags=args.tags,
                 not_tags=args.not_tags)
-    gen_report(outfile=args.out, quiet=args.quiet)
+    gen_report(outfile=args.out, quiet=args.quiet, ojson=args.json)
 
 
 def fixer(args):
@@ -237,6 +237,8 @@ if __name__ == "__main__":
                               help="Print available tags.  Only prints tags "
                                    "for plugins loaded with '-u' as well as "
                                    "generally available tags")
+    check_parser.add_argument("-j", "--json", action="store_true",
+                              help="Output json")
 
     # Fix Parser Arguments
     fix_parser.add_argument("-i", "--in-report", help="Report file location "

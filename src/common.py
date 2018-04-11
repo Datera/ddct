@@ -6,9 +6,11 @@ import glob
 import importlib
 import inspect
 import io
+import json
 import os
 import re
 import subprocess
+import socket
 
 try:
     import ipaddress
@@ -91,6 +93,7 @@ IP_ROUTE_RE = re.compile(
 class Report(object):
 
     def __init__(self):
+        self.hostname = None
         self.success = []
         self.warning = {}
         self.warning_id = {}
@@ -134,6 +137,8 @@ class Report(object):
             self.tags[name].add(tag)
 
     def generate(self):
+        if not self.hostname:
+            self.hostname = socket.gethostname()
         s = list(map(lambda x: (
             x,
             SUCCESS,
@@ -159,7 +164,16 @@ class Report(object):
             f + w + s,
             headers=["Test", "Status", "Reasons", "IDs", "Tags"],
             tablefmt="grid")
+        result = "\n".join(("HOST: {}".format(self.hostname), result))
         return result
+
+    def gen_json(self):
+        if not self.hostname:
+            self.hostname = socket.gethostname()
+        return {"host": self.hostname,
+                "success": self.success,
+                "warnings": self.warning,
+                "failures": self.failure}
 
     def code_list(self):
         result = []
@@ -322,13 +336,18 @@ def wf(reasons, uid):
     report.add_warning(name, "\n".join(reasons), uid, tags)
 
 
-def gen_report(outfile=None, quiet=False):
-    results = report.generate()
+def gen_report(outfile=None, quiet=False, ojson=False):
+    if ojson:
+        results = report.gen_json()
+    else:
+        results = report.generate()
     if outfile:
         with io.open(outfile, 'w+') as f:
             f.write(results)
             f.write("\n")
-    if not quiet:
+    if ojson and not quiet:
+        print(json.dumps(results, indent=4))
+    elif not quiet:
         print(results)
 
 
