@@ -172,8 +172,8 @@ class Report(object):
             self.hostname = socket.gethostname()
         return {"host": self.hostname,
                 "success": self.success,
-                "warnings": self.warning,
-                "failures": self.failure}
+                "warnings": self.warning_by_id,
+                "failures": self.failure_by_id}
 
     def code_list(self):
         result = []
