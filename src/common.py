@@ -387,7 +387,7 @@ def vprint(*args, **kwargs):
 
 def exe(cmd):
     vprint("Running cmd:", cmd)
-    return subprocess.check_output(cmd, shell=True)
+    return subprocess.check_output(cmd, shell=True).decode("utf-8")
 
 
 def exe_check(cmd, err=False):

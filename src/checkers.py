@@ -16,13 +16,13 @@ except ImportError:
     tabulate = None
 
 
-@check("OS", "basic")
+@check("OS", "basic", "os")
 def check_os(config):
     if not get_os():
         return ff("Unsupported Operating System", "3C47368")
 
 
-@check("ISCSI", "basic")
+@check("ISCSI", "basic", "iscsi")
 def check_iscsi(config):
     vprint("Checking ISCSI settings")
     if not exe_check("which iscsiadm"):
@@ -41,7 +41,7 @@ def check_udev(config):
         ff("fetch_device_serial_no.sh is missing from /sbin", "6D03F50B")
 
 
-@check("ARP", "basic")
+@check("ARP", "basic", "arp")
 def check_arp(config):
     vprint("Checking ARP settings")
     if not exe_check("sysctl --all 2>/dev/null | "
@@ -54,7 +54,7 @@ def check_arp(config):
         ff("net.ipv4.conf.all.arp_ignore != 1 in sysctl", "BDB4D5D8")
 
 
-@check("IRQ", "basic")
+@check("IRQ", "basic", "irq")
 def check_irq(config):
     vprint("Checking irqbalance settings, (should be turned off)")
     if not exe_check("which systemctl"):
@@ -69,7 +69,7 @@ def check_irq(config):
             return ff("irqbalance is active", "B19D9FF1")
 
 
-@check("CPUFREQ", "basic")
+@check("CPUFREQ", "basic", "cpufreq")
 def check_cpufreq(config):
     vprint("Checking cpufreq settings")
     if not exe_check("which cpupower"):
@@ -83,7 +83,7 @@ def check_cpufreq(config):
             "333FBD45")
 
 
-@check("Block Devices", "basic")
+@check("Block Devices", "basic", "block_device")
 def check_block_devices(config):
     vprint("Checking block device settings")
     grub = "/etc/default/grub"
@@ -100,7 +100,7 @@ def check_block_devices(config):
             return ff("Scheduler is not set to noop", "47BB5083")
 
 
-@check("Multipath", "basic")
+@check("Multipath", "basic", "multipath")
 def check_multipath(config):
     vprint("Checking multipath settings")
     if not exe_check("which multipath", err=False):
@@ -116,7 +116,7 @@ def check_multipath(config):
             ff("multipathd not enabled", "541C10BF")
 
 
-@check("Multipath Conf", "basic")
+@check("Multipath Conf", "basic", "multipath")
 def check_multipath_conf(config):
     mfile = "/etc/multipath.conf"
     if not os.path.exists(mfile):
