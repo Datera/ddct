@@ -26,8 +26,12 @@ def check_os(config):
 def check_iscsi(config):
     vprint("Checking ISCSI settings")
     if not exe_check("which iscsiadm"):
+        if get_os() == "ubuntu":
+            fix = "apt-get install open-iscsi"
+        elif get_os() == "centos":
+            fix = "yum install iscsi-initiator-utils"
         ff("iscsiadm is not available, has open-iscsi been installed?",
-           "EFBB085C")
+           "EFBB085C", fix=fix)
 
 
 @check("UDEV", "basic", "udev")

@@ -61,11 +61,13 @@ def main(args):
         # Install prereqs Centos
         except subprocess.CalledProcessError as e:
             vprint(e)
+            print("Ubuntu packages failed, trying RHEL packages")
             try:
                 exe("sudo yum install python-virtualenv python-devel "
                     "libffi-devel openssl-devel -y")
             except subprocess.CalledProcessError as e:
                 print(e)
+                print("RHEL packages failed")
                 print("Could not install prereqs")
                 return 1
     if not os.path.isdir(VENV):
@@ -90,6 +92,7 @@ def main(args):
           "\nThe generated config file is located at '{}'".format(
               DDCT, CONFIG))
     return 0
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

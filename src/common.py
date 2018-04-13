@@ -65,6 +65,8 @@ def apply_color(value_for_coloring=None, color=None):
         prefix = "\x1b[33m"
     elif color == "cyan":
         prefix = "\x1b[36m"
+    elif color == "magenta":
+        prefix = "\x1b[35m"
     return "{}{}{}".format(prefix, value_for_coloring, suffix)
 
 
@@ -75,6 +77,7 @@ WARNINGS = True
 SUCCESS = apply_color("Success", color="green")
 FAILURE = apply_color("FAIL", color="red")
 WARNING = apply_color("WARN", color="yellow")
+FIX = apply_color("FIX", color="cyan")
 
 
 CHECK_RE = re.compile(".*check_(.*)\.py")
@@ -98,10 +101,16 @@ class Report(object):
         self.warning = {}
         self.warning_id = {}
         self.warning_by_id = {}
+        self.fix_by_id = {}
         self.failure = {}
         self.failure_id = {}
         self.failure_by_id = {}
         self.tags = {}
+
+    @staticmethod
+    def format_fix(fix):
+        return "{}: {}".format(FIX, apply_color(fix, "magenta"))
+        # return "{}: {}".format("FIX", fix)
 
     def add_success(self, name, tags):
         if name not in self.failure and name not in self.warning:
@@ -111,7 +120,7 @@ class Report(object):
             for tag in tags:
                 self.tags[name].add(tag)
 
-    def add_warning(self, name, reason, uid, tags):
+    def add_warning(self, name, reason, uid, tags, fix=None):
         if WARNINGS:
             if name not in self.warning:
                 self.warning[name] = []
@@ -119,18 +128,22 @@ class Report(object):
             self.warning[name].append(reason)
             self.warning_id[name].append(uid)
             self.warning_by_id[uid] = (name, reason)
+            if fix:
+                self.fix_by_id[uid] = self.format_fix(fix)
             if name not in tags:
                 self.tags[name] = set()
             for tag in tags:
                 self.tags[name].add(tag)
 
-    def add_failure(self, name, reason, uid, tags):
+    def add_failure(self, name, reason, uid, tags, fix=None):
         if name not in self.failure:
             self.failure[name] = []
             self.failure_id[name] = []
         self.failure[name].append(reason)
         self.failure_id[name].append(uid)
         self.failure_by_id[uid] = (name, reason)
+        if fix:
+            self.fix_by_id[uid] = self.format_fix(fix)
         if name not in tags:
             self.tags[name] = set()
         for tag in tags:
@@ -146,20 +159,40 @@ class Report(object):
             "",
             "\n".join(sorted(self.tags[x]))),
             sorted(self.success)))
-        w = list(map(lambda x: (
-            x[0],
-            WARNING,
-            "\n".join(x[1]),
-            "\n".join(self.warning_id[x[0]]),
-            "\n".join(sorted(self.tags[x[0]]))),
-            sorted(self.warning.items())))
-        f = list(map(lambda x: (
-            x[0],
-            FAILURE,
-            "\n".join(x[1]),
-            "\n".join(self.failure_id[x[0]]),
-            "\n".join(sorted(self.tags[x[0]]))),
-            sorted(self.failure.items())))
+
+        w = []
+        for name, wids in self.warning_id.items():
+            warnings = []
+            nwids = []
+            for wid in wids:
+                nwids.append(wid)
+                warnings.append(self.warning_by_id[wid][1])
+                fix = self.fix_by_id.get(wid)
+                if fix:
+                    nwids.append("\n")
+                    warnings.append(fix)
+            w.append([name,
+                      WARNING,
+                      "\n".join(warnings),
+                      "\n".join(nwids),
+                      "\n".join(sorted(self.tags[name]))])
+        f = []
+        for name, fids in self.failure_id.items():
+            failures = []
+            nfids = []
+            for fid in fids:
+                nfids.append(fid)
+                failures.append(self.failure_by_id[fid][1])
+                fix = self.fix_by_id.get(fid)
+                if fix:
+                    nfids.append(" ")
+                    failures.append(fix)
+            f.append([name,
+                      FAILURE,
+                      "\n".join(failures),
+                      "\n".join(nfids),
+                      "\n".join(sorted(self.tags[name]))])
+
         result = tabulate(
             f + w + s,
             headers=["Test", "Status", "Reasons", "IDs", "Tags"],
@@ -319,21 +352,21 @@ def sf():
 
 
 # Fail Func
-def ff(reasons, uid):
+def ff(reasons, uid, fix=None):
     name, tags = _lookup_vars()
     if type(reasons) not in (list, tuple):
-        report.add_failure(name, reasons, uid, tags)
+        report.add_failure(name, reasons, uid, tags, fix=fix)
         return
-    report.add_failure(name, "\n".join(reasons), uid, tags)
+    report.add_failure(name, "\n".join(reasons), uid, tags, fix=fix)
 
 
 # Warn Func
-def wf(reasons, uid):
+def wf(reasons, uid, fix=None):
     name, tags = _lookup_vars()
     if type(reasons) not in (list, tuple):
-        report.add_warning(name, reasons, uid, tags)
+        report.add_warning(name, reasons, uid, tags, fix=fix)
         return
-    report.add_warning(name, "\n".join(reasons), uid, tags)
+    report.add_warning(name, "\n".join(reasons), uid, tags, fix=fix)
 
 
 def gen_report(outfile=None, quiet=False, ojson=False):
