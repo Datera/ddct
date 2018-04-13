@@ -95,12 +95,15 @@ def check_block_devices(config):
         return ff("Could not find default grub file at {}".format(grub),
                   "6F7B6A25")
     with io.open(grub, "r") as f:
+        data = f.readlines()
         line = filter(lambda x: x.startswith("GRUB_CMDLINE_LINUX_DEFAULT="),
-                      f.readlines())
-        if len(line) != 1:
-            return ff("GRUB_CMDLINE_LINUX_DEFAULT missing from GRUB file",
-                      "A65B6D97")
-        if "elevator=noop" not in line[0]:
+                      data)
+        line2 = filter(lambda x: x.startswith("GRUB_CMDLINE_LINUX="), data)
+        if len(line) != 1 and len(line2) != 1:
+            return ff("GRUB_CMDLINE_LINUX_DEFAULT and GRUB_CMDLINE_LINUX are"
+                      " missing from GRUB file", "A65B6D97")
+        if ((len(line) > 0 and "elevator=noop" not in line[0]) and
+                (len(line2) > 0 and "elevator=noop" not in line2[0])):
             return ff("Scheduler is not set to noop", "47BB5083")
 
 
