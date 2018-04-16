@@ -15,11 +15,18 @@ try:
 except ImportError:
     tabulate = None
 
+SUPPORTED_OS_TYPES = ["ubuntu", "debian", "centos", "rhel"]
+FETCH_SO_URL = ("https://raw.githubusercontent.com/Datera/docker-driver/"
+                "master/scripts/assets/fetch_device_serial_no.sh")
+UDEV_URL = ("https://raw.githubusercontent.com/Datera/docker-driver/master/"
+            "scripts/assets/99-iscsi-luns.rules")
+
 
 @check("OS", "basic", "os")
 def check_os(config):
     if not get_os():
-        return ff("Unsupported Operating System", "3C47368")
+        return ff("Unsupported Operating System. Supported operating systems:"
+                  "{}".format(SUPPORTED_OS_TYPES), "3C47368")
 
 
 @check("ISCSI", "basic", "iscsi")
@@ -39,10 +46,15 @@ def check_udev(config):
     vprint("Checking udev rules config")
     frules = "/etc/udev/rules.d/99-iscsi-luns.rules"
     if not os.path.exists(frules):
-        ff("Datera udev rules are not installed", "1C8F2E07")
+        fix = "A copy of the udev rules are available from: {}".format(
+            UDEV_URL)
+        ff("Datera udev rules are not installed", "1C8F2E07", fix=fix)
     snum = "/sbin/fetch_device_serial_no.sh"
     if not os.path.exists(snum):
-        ff("fetch_device_serial_no.sh is missing from /sbin", "6D03F50B")
+        fix = ("A copy of fetch_device_serial_no.sh is available at: "
+               "{}".format(FETCH_SO_URL))
+        ff("fetch_device_serial_no.sh is missing from /sbin", "6D03F50B",
+           fix=fix)
 
 
 @check("ARP", "basic", "arp")

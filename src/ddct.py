@@ -111,6 +111,7 @@ def checker(args):
     # Global flags
     common.VERBOSE = args.verbose
     common.WARNINGS = not args.disable_warnings
+    common.WRAPTXT = not args.no_wrap
 
     if args.list_plugins:
         check_plugin_table()
@@ -241,6 +242,8 @@ if __name__ == "__main__":
                                    "generally available tags")
     check_parser.add_argument("-j", "--json", action="store_true",
                               help="Output json")
+    check_parser.add_argument("-s", "--no-wrap", action="store_true",
+                              help="Disable text wrapping in report output")
 
     # Fix Parser Arguments
     fix_parser.add_argument("-i", "--in-report", help="Report file location "

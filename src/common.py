@@ -11,6 +11,7 @@ import os
 import re
 import subprocess
 import socket
+import textwrap
 
 try:
     import ipaddress
@@ -73,11 +74,16 @@ def apply_color(value_for_coloring=None, color=None):
 PLUGIN_LOC = os.path.join(os.path.dirname(__file__), "plugins")
 VERBOSE = False
 WARNINGS = True
+WRAPTXT = True
+
 
 SUCCESS = apply_color("Success", color="green")
 FAILURE = apply_color("FAIL", color="red")
 WARNING = apply_color("WARN", color="yellow")
-FIX = apply_color("FIX", color="cyan")
+# FIX = apply_color("FIX {}", color="cyan")
+FIX = "FIX {}"
+# ISSUE = apply_color("ISSUE {}", color="magenta")
+ISSUE = "ISSUE {}"
 
 
 CHECK_RE = re.compile(".*check_(.*)\.py")
@@ -91,6 +97,12 @@ INSTALL_GLOB = "install_*.py"
 
 IP_ROUTE_RE = re.compile(
     "^(?P<net>[\w|\.|:|/]+).*dev\s(?P<iface>[\w|\.|:]+).*?$")
+
+
+def _wraptxt(txt, fill):
+    if WRAPTXT:
+        return textwrap.fill(txt, fill)
+    return txt
 
 
 class Report(object):
@@ -108,9 +120,13 @@ class Report(object):
         self.tags = {}
 
     @staticmethod
-    def format_fix(fix):
-        return "{}: {}".format(FIX, apply_color(fix, "magenta"))
-        # return "{}: {}".format("FIX", fix)
+    def format_fix(fix, uid):
+        # return "{}: {}".format(FIX, apply_color(fix, "magenta"))
+        return "{}: {}".format(FIX, fix).format(uid)
+
+    @staticmethod
+    def format_issue(issue, uid):
+        return "{}: {}".format(ISSUE, issue).format(uid)
 
     def add_success(self, name, tags):
         if name not in self.failure and name not in self.warning:
@@ -121,6 +137,7 @@ class Report(object):
                 self.tags[name].add(tag)
 
     def add_warning(self, name, reason, uid, tags, fix=None):
+        reason = self.format_issue(reason, uid)
         if WARNINGS:
             if name not in self.warning:
                 self.warning[name] = []
@@ -129,13 +146,14 @@ class Report(object):
             self.warning_id[name].append(uid)
             self.warning_by_id[uid] = (name, reason)
             if fix:
-                self.fix_by_id[uid] = self.format_fix(fix)
+                self.fix_by_id[uid] = self.format_fix(fix, uid)
             if name not in tags:
                 self.tags[name] = set()
             for tag in tags:
                 self.tags[name].add(tag)
 
     def add_failure(self, name, reason, uid, tags, fix=None):
+        reason = self.format_issue(reason, uid)
         if name not in self.failure:
             self.failure[name] = []
             self.failure_id[name] = []
@@ -143,7 +161,7 @@ class Report(object):
         self.failure_id[name].append(uid)
         self.failure_by_id[uid] = (name, reason)
         if fix:
-            self.fix_by_id[uid] = self.format_fix(fix)
+            self.fix_by_id[uid] = self.format_fix(fix, uid)
         if name not in tags:
             self.tags[name] = set()
         for tag in tags:
@@ -152,6 +170,11 @@ class Report(object):
     def generate(self):
         if not self.hostname:
             self.hostname = socket.gethostname()
+        longest = max(map(
+            lambda x: len(x),
+            [val for sublist in
+                list(self.failure.values()) + list(self.warning.values())
+                for val in sublist]))
         s = list(map(lambda x: (
             x,
             SUCCESS,
@@ -171,10 +194,12 @@ class Report(object):
                 if fix:
                     nwids.append("\n")
                     warnings.append(fix)
+            for index, warning in enumerate(warnings):
+                if "FIX" in warning:
+                    warnings[index] = _wraptxt(warning, longest) + "\n"
             w.append([name,
                       WARNING,
                       "\n".join(warnings),
-                      "\n".join(nwids),
                       "\n".join(sorted(self.tags[name]))])
         f = []
         for name, fids in self.failure_id.items():
@@ -185,17 +210,18 @@ class Report(object):
                 failures.append(self.failure_by_id[fid][1])
                 fix = self.fix_by_id.get(fid)
                 if fix:
-                    nfids.append(" ")
                     failures.append(fix)
+            for index, failure in enumerate(failures):
+                if "FIX" in failure:
+                    failures[index] = _wraptxt(failure, longest) + "\n"
             f.append([name,
                       FAILURE,
                       "\n".join(failures),
-                      "\n".join(nfids),
                       "\n".join(sorted(self.tags[name]))])
 
         result = tabulate(
             f + w + s,
-            headers=["Test", "Status", "Reasons", "IDs", "Tags"],
+            headers=["Test", "Status", "Reasons", "Tags"],
             tablefmt="grid")
         result = "\n".join(("HOST: {}".format(self.hostname), result))
         return result
