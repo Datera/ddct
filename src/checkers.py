@@ -63,11 +63,14 @@ def check_arp(config):
     if not exe_check("sysctl --all 2>/dev/null | "
                      "grep 'net.ipv4.conf.all.arp_announce = 2'",
                      err=False):
-        ff("net.ipv4.conf.all.arp_announce != 2 in sysctl", "9000C3B6")
+        fix = "sysctl net.ipv4.conf.all.arp_announce=2"
+        ff("net.ipv4.conf.all.arp_announce != 2 in sysctl", "9000C3B6",
+           fix=fix)
     if not exe_check("sysctl --all 2>/dev/null | "
                      "grep 'net.ipv4.conf.all.arp_ignore = 1'",
                      err=False):
-        ff("net.ipv4.conf.all.arp_ignore != 1 in sysctl", "BDB4D5D8")
+        fix = "sysctl net.ipv4.conf.all.arp_ignore=1"
+        ff("net.ipv4.conf.all.arp_ignore != 1 in sysctl", "BDB4D5D8", fix=fix)
 
 
 @check("IRQ", "basic", "irq")
@@ -77,19 +80,26 @@ def check_irq(config):
         if not exe_check("service irqbalance status | "
                          "grep 'Active: active'",
                          err=True):
-            return ff("irqbalance is active", "B19D9FF1")
+            fix = "service irqbalance stop"
+            return ff("irqbalance is active", "B19D9FF1", fix=fix)
     else:
         if not exe_check("systemctl status irqbalance | "
                          "grep 'Active: active'",
                          err=True):
-            return ff("irqbalance is active", "B19D9FF1")
+            fix = "systemctl stop irqbalance && systemctl disable irqbalance"
+            return ff("irqbalance is active", "B19D9FF1", fix=fix)
 
 
 @check("CPUFREQ", "basic", "cpufreq")
 def check_cpufreq(config):
     vprint("Checking cpufreq settings")
     if not exe_check("which cpupower"):
-        return ff("cpupower is not installed", "20CEE732")
+        if get_os == "ubuntu":
+            fix = "apt-get install cpupower"
+        else:
+            # RHEL puts this stuff in kernel-tools
+            fix = "yum install kernel-tools"
+        return ff("cpupower is not installed", "20CEE732", fix=fix)
     if not exe_check("cpupower frequency-info --governors | "
                      "grep performance",
                      err=False):
