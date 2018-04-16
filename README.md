@@ -60,8 +60,6 @@ $ vi ddct.json
     "mgmt_ip": "172.19.1.41",
     "password": "password",
     "username": "admin",
-    "vip1_ip": "172.28.41.9",
-    "vip2_ip": "172.29.41.9"
 }
 
 # Finally, run the tool
@@ -167,20 +165,13 @@ Now we'll edit the generated file and fill out the fields
 $ vi ddct.json
 
 {
-    "cluster_root_keyfile": null,
-    "cluster_root_password": null,
     "mgmt_ip": "1.1.1.1",
     "password": "password",
     "username": "admin",
-    "vip1_ip": "10.0.1.1",
-    "vip2_ip": "10.0.2.1"
 }
 ```
 
-If there is no vip2 on the setup, set the value to `null` or delete the line.
-`cluster_root_keyfile` and `cluster_root_password` are optional fields provided
-for when we have checks/fixes requiring cluster root access.  `username` and
-`password` are the account credentials to be used by this node.
+The VIP ip addresses will be pulled directly from the cluster.
 
 
 Once the config file is filled out, we can run a basic set of checks with the
@@ -385,11 +376,7 @@ dictionary below:
 {
     "mgmt_ip": "172.19.1.41",
     "password": "password",
-    "username": "admin",
-    "vip1_ip": "172.28.41.9",
-    "vip2_ip": "172.29.41.9",
-    "cluster_root_password": None,
-    "cluster_root_keyfile": None}
+    "username": "admin"
 }
 ```
 
