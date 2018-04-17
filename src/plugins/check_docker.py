@@ -14,7 +14,7 @@ CONFIG_FILE = "/root/.datera-config-file"
 PLUGIN = "dateraiodev/docker-driver"
 
 
-@check("Docker Volume", "driver", "plugin")
+@check("Docker Volume", "driver", "plugin", "local")
 def check_docker_volume(config):
     vprint("Checking docker volume driver")
     if not exe_check("docker ps >/dev/null 2>&1"):
@@ -44,7 +44,7 @@ def check_docker_volume(config):
         ff("Could not delete Docker volume {}".format(test_name), "AF3DB8B3")
 
 
-@check("Docker Volume Config", "driver", "plugin")
+@check("Docker Volume Config", "driver", "plugin", "local")
 def check_docker_config(config):
     if not os.path.exists(CONFIG_FILE):
         return ff("Missing Datera config file at '/root/.datera-config-file'",

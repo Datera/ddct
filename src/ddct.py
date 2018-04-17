@@ -122,6 +122,8 @@ def checker(args):
         print_tags(config, plugins=args.use_plugins)
         sys.exit(0)
 
+    if args.no_local:
+        args.not_tags.append("local")
     if not args.quiet:
         print("Plugins: {}\n".format(", ".join(args.use_plugins)),
               "Tags: {}\n".format(", ".join(args.tags)),
@@ -244,6 +246,10 @@ if __name__ == "__main__":
                               help="Output json")
     check_parser.add_argument("-s", "--no-wrap", action="store_true",
                               help="Disable text wrapping in report output")
+    check_parser.add_argument("-a", "--no-local", action="store_true",
+                              help="Disable local checks.  This is useful for "
+                                   "plugins that access resources remotely "
+                                   "and the local client is not under test")
 
     # Fix Parser Arguments
     fix_parser.add_argument("-i", "--in-report", help="Report file location "

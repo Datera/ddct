@@ -44,7 +44,7 @@ def detect_cinder_install():
                 "".format(LOCATIONS))
 
 
-@check("Cinder Volume", "driver", "plugin")
+@check("Cinder Volume", "driver", "plugin", "local")
 def check_cinder_volume_driver(config):
     version = get_latest_driver_version(TAGS)
     need_version = version.strip("v")
@@ -69,7 +69,8 @@ def check_cinder_volume_driver(config):
                   "{}".format(version, need_version), "5B6EFC71")
 
 
-@check("Cinder Image Cache Conf", "driver", "plugin", "config", "image")
+@check("Cinder Image Cache Conf", "driver", "plugin", "config", "image",
+       "local")
 def check_cinder_image_cache_conf(config):
     with io.open(ETC, 'r') as f:
         section = None
@@ -95,7 +96,7 @@ def check_cinder_image_cache_conf(config):
                " type id in cinder.conf", "B845D5B1")
 
 
-@check("Cinder Volume Conf", "driver", "plugin", "config")
+@check("Cinder Volume Conf", "driver", "plugin", "config", "local")
 def check_cinder_volume_conf(config):
     section = None
     with io.open(ETC, 'r') as f:

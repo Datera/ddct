@@ -170,11 +170,14 @@ class Report(object):
     def generate(self):
         if not self.hostname:
             self.hostname = socket.gethostname()
-        longest = max(map(
-            lambda x: len(x),
-            [val for sublist in
-                list(self.failure.values()) + list(self.warning.values())
-                for val in sublist]))
+        try:
+            longest = max(map(
+                lambda x: len(x),
+                [val for sublist in
+                    list(self.failure.values()) + list(self.warning.values())
+                    for val in sublist]))
+        except ValueError:
+            longest = 30
         s = list(map(lambda x: (
             x,
             SUCCESS,

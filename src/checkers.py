@@ -22,14 +22,14 @@ UDEV_URL = ("https://raw.githubusercontent.com/Datera/docker-driver/master/"
             "scripts/assets/99-iscsi-luns.rules")
 
 
-@check("OS", "basic", "os")
+@check("OS", "basic", "os", "local")
 def check_os(config):
     if not get_os():
         return ff("Unsupported Operating System. Supported operating systems:"
                   "{}".format(SUPPORTED_OS_TYPES), "3C47368")
 
 
-@check("ISCSI", "basic", "iscsi")
+@check("ISCSI", "basic", "iscsi", "local")
 def check_iscsi(config):
     vprint("Checking ISCSI settings")
     if not exe_check("which iscsiadm"):
@@ -41,7 +41,7 @@ def check_iscsi(config):
            "EFBB085C", fix=fix)
 
 
-@check("UDEV", "basic", "udev")
+@check("UDEV", "basic", "udev", "local")
 def check_udev(config):
     vprint("Checking udev rules config")
     frules = "/etc/udev/rules.d/99-iscsi-luns.rules"
@@ -57,7 +57,7 @@ def check_udev(config):
            fix=fix)
 
 
-@check("ARP", "basic", "arp")
+@check("ARP", "basic", "arp", "local")
 def check_arp(config):
     vprint("Checking ARP settings")
     if not exe_check("sysctl --all 2>/dev/null | "
@@ -73,7 +73,7 @@ def check_arp(config):
         ff("net.ipv4.conf.all.arp_ignore != 1 in sysctl", "BDB4D5D8", fix=fix)
 
 
-@check("IRQ", "basic", "irq")
+@check("IRQ", "basic", "irq", "local")
 def check_irq(config):
     vprint("Checking irqbalance settings, (should be turned off)")
     if not exe_check("which systemctl"):
@@ -90,7 +90,7 @@ def check_irq(config):
             return ff("irqbalance is active", "B19D9FF1", fix=fix)
 
 
-@check("CPUFREQ", "basic", "cpufreq")
+@check("CPUFREQ", "basic", "cpufreq", "local")
 def check_cpufreq(config):
     vprint("Checking cpufreq settings")
     if not exe_check("which cpupower"):
@@ -109,7 +109,7 @@ def check_cpufreq(config):
             "333FBD45")
 
 
-@check("Block Devices", "basic", "block_device")
+@check("Block Devices", "basic", "block_device", "local")
 def check_block_devices(config):
     vprint("Checking block device settings")
     grub = "/etc/default/grub"
@@ -129,7 +129,7 @@ def check_block_devices(config):
             return ff("Scheduler is not set to noop", "47BB5083")
 
 
-@check("Multipath", "basic", "multipath")
+@check("Multipath", "basic", "multipath", "local")
 def check_multipath(config):
     vprint("Checking multipath settings")
     if not exe_check("which multipath", err=False):
@@ -145,7 +145,7 @@ def check_multipath(config):
             ff("multipathd not enabled", "541C10BF")
 
 
-@check("Multipath Conf", "basic", "multipath")
+@check("Multipath Conf", "basic", "multipath", "local")
 def check_multipath_conf(config):
     mfile = "/etc/multipath.conf"
     if not os.path.exists(mfile):
@@ -220,7 +220,7 @@ def check_multipath_conf(config):
                "642753A0")
 
 
-@check("MGMT", "basic", "connection")
+@check("MGMT", "basic", "connection", "local")
 def mgmt_check(config):
     mgmt = config["mgmt_ip"]
     if not exe_check("ping -c 2 -W 1 {}".format(mgmt), err=False):
@@ -236,7 +236,7 @@ def mgmt_check(config):
             break
 
 
-@check("VIP1", "basic", "connection")
+@check("VIP1", "basic", "connection", "local")
 def vip1_check(config):
     vip1 = config["vip1_ip"]
     if not exe_check("ping -c 2 -W 1 {}".format(vip1), err=False):
@@ -252,7 +252,7 @@ def vip1_check(config):
             break
 
 
-@check("VIP2", "basic", "connection")
+@check("VIP2", "basic", "connection", "local")
 def vip2_check(config):
     vip2 = config.get("vip2_ip")
     if vip2 and not exe_check("ping -c 2 -W 1 {}".format(vip2), err=False):
@@ -268,7 +268,7 @@ def vip2_check(config):
             break
 
 
-@check("CALLHOME", "basic", "setup")
+@check("CALLHOME", "basic", "setup", "local")
 def callhome_check(config):
     api = config["api"]
     if not api.system.get()['callhome_enabled']:

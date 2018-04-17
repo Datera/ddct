@@ -90,7 +90,7 @@ def check_mtu_l3(ip, config):
            "A4CA0D72")
 
 
-@check("MGMT MTU", "connection", "plugin")
+@check("MGMT MTU", "connection", "plugin", "local")
 def check_mgmt(config):
     vprint("Checking mgmt interface mtu match")
     mgmt = config['mgmt_ip']
@@ -100,7 +100,7 @@ def check_mgmt(config):
         check_mtu_normal("MGMT", mgmt, config)
 
 
-@check("VIP1 MTU", "connection", "plugin")
+@check("VIP1 MTU", "connection", "plugin", "local")
 def check_vip1(config):
     vprint("Checking vip1 interface mtu match")
     vip1 = config['vip1_ip']
@@ -110,7 +110,7 @@ def check_vip1(config):
         check_mtu_normal("VIP1", vip1, config)
 
 
-@check("VIP2 MTU", "connection", "plugin")
+@check("VIP2 MTU", "connection", "plugin", "local")
 def check_vip2(config):
     vprint("Checking vip2 interface mtu match")
     vip2 = config['vip2_ip']

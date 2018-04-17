@@ -48,7 +48,7 @@ def find_entry_points_file():
     return result.strip()
 
 
-@check("Glance", "driver", "plugin", "image")
+@check("Glance", "driver", "plugin", "image", "local")
 def check_glance_driver(config):
     version = get_latest_driver_version(TAGS)
     need_version = version.strip("v")
@@ -106,7 +106,7 @@ def check_glance_driver(config):
            "'choices' parameter", "C521E039")
 
 
-@check("Glance Conf", "driver", "plugin", "config", "image")
+@check("Glance Conf", "driver", "plugin", "config", "image", "local")
 def check_glance_conf(config):
     pass
     section = None
