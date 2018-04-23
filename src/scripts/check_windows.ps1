@@ -1,3 +1,49 @@
+<#
+.SYNOPSIS
+    Run Datera PoC checks to determine fitness for communicating with a Datera cluster
+.DESCRIPTION
+    This script will run through the following checks to determine if it is ready
+    for use with a Datera cluster.
+        * ISCSI services check
+        * Management connection check
+        * VIP1 connection check
+        * VIP2 connection check
+        * Management mtu check
+        * VIP1 mtu check
+        * VIP2 mtu check
+        * Power settings check
+        * Receive side scaling check
+.EXAMPLE
+    Copy this file to the Desktop of the Admin account
+    Run
+    C:\Users\Admin\Desktop\check_windows.ps1 172.19.1.41 172.28.222.9 172.29.222.9-human
+    --------------
+    Example Output
+    --------------
+    Checking ISCSI Service
+    SUCCESS
+    Testing vip_1 Connection
+    SUCCESS
+    Testing vip_2 Connection
+    SUCCESS
+    Testing mgmt_ip Connection
+    SUCCESS
+    vip_2 was not populated, skipping MTU test
+    Testing vip_1 MTU
+    SUCCESS
+    Testing mgmt_ip MTU
+    SUCCESS
+    Checking Power Settings
+    Power settings are not set to 'High performance'
+    Checking Recieve Side Scaling
+    SUCCESS
+    Finished.  Status Code: 256
+    FAILED_POWER_SETTINGS
+
+    Each check will either report SUCCESS or it will display an error at the end
+    of the test run.
+#>
+
 Param(
     [Parameter(Mandatory=$true)]
     [string]$mgmt,
@@ -11,6 +57,7 @@ Param(
     [Parameter(Mandatory=$false)]
     [switch]$human = $false
 )
+
 
 Set-StrictMode -Version Latest
 
