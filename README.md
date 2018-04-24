@@ -139,6 +139,55 @@ fixes can be written in a non-idempotent style.
 
 The tool should be run until all checks show "Success"
 
+---------------
+Windows Support
+---------------
+
+Currently not all features of DDCT are supported on Windows.  As full Windows
+support is being developed, a Powershell script has been added to bridge the
+gap.
+
+Copy the powershell script to the local machine.
+```powershell
+PS C:\> Invoke-WebRequest "https://raw.githubusercontent.com/Datera/ddct/master/src/scripts/check_windows.ps1" -OutFile "C:\Temp\check_windows.ps1"
+```
+
+Make sure RemoteSigned is enabled in your Powershell session, otherwise
+execution of the script will fail.
+```powershell
+PS C:\> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned
+```
+
+Now run the powershell script (substitute your MGMT IP, VIP1 IP and VIP2 IP)
+```powershell
+PS C:\> C:\Temp\check_windows.ps1 172.19.1.41 172.28.222.9 172.29.222.9 -human
+```
+Example Output
+```
+Checking ISCSI Service
+SUCCESS
+Testing vip_1 Connection
+SUCCESS
+Testing vip_2 Connection
+SUCCESS
+Testing mgmt_ip Connection
+SUCCESS
+vip_2 was not populated, skipping MTU test
+Testing vip_1 MTU
+SUCCESS
+Testing mgmt_ip MTU
+SUCCESS
+Checking Power Settings
+Power settings are not set to 'High performance'
+Checking Recieve Side Scaling
+SUCCESS
+Finished.  Status Code: 256
+FAILED_POWER_SETTINGS
+```
+
+Each check will either report SUCCESS or it will display an error at the end
+of the test run.
+
 ----------
 What To Do
 ----------
