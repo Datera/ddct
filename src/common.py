@@ -33,6 +33,8 @@ TAG_RE = re.compile("\d+\.\d+\.\d+")
 UUID4_STR_RE = re.compile("[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab]"
                           "[a-f0-9]{3}-?[a-f0-9]{12}")
 
+INVISIBLE = re.compile(r"\x1b\[\d+[;\d]*m|\x1b\[\d*\;\d*\;\d*m")
+
 
 def get_latest_driver_version(tag_url):
     found = []
@@ -69,6 +71,10 @@ def apply_color(value_for_coloring=None, color=None):
     elif color == "magenta":
         prefix = "\x1b[35m"
     return "{}{}{}".format(prefix, value_for_coloring, suffix)
+
+
+def strip_invisible(s):
+    return re.sub(INVISIBLE, "", s)
 
 
 PLUGIN_LOC = os.path.join(os.path.dirname(__file__), "plugins")
@@ -250,6 +256,11 @@ report = Report()
 func_run = set()
 
 
+def reset_checks():
+    global report
+    report = Report()
+
+
 def idempotent(func):
     if func.__name__ in func_run:
         return
@@ -404,9 +415,13 @@ def gen_report(outfile=None, quiet=False, ojson=False):
     else:
         results = report.generate()
     if outfile:
-        with io.open(outfile, 'w+') as f:
-            f.write(results)
-            f.write("\n")
+        try:
+            with io.open(outfile, 'w+') as f:
+                f.write(results)
+                f.write("\n")
+        except TypeError:
+            outfile.write(results)
+            outfile.write("\n")
     if ojson and not quiet:
         print(json.dumps(results, indent=4))
     elif not quiet:

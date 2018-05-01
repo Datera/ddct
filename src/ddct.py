@@ -7,10 +7,14 @@ Datera Deployment Check Tool
 """
 
 import argparse
+import curses
+import datetime
 import io
 import json
 import os
 import sys
+import StringIO
+import time
 
 
 import common
@@ -22,8 +26,10 @@ from installers import run_installers
 
 try:
     from dfs_sdk import get_api
+    from dfs_sdk.exceptions import ApiInvalidRequestError
 except ImportError:
     get_api = None
+    ApiInvalidRequestError = None
 
 
 VERSION = "v2.1.0"
@@ -59,8 +65,12 @@ def get_config(args):
     if not config:
         print("No valid config found")
         sys.exit(1)
-    api = get_api(
-        config['mgmt_ip'], config['username'], config['password'], "v2.2")
+    try:
+        api = get_api(
+            config['mgmt_ip'], config['username'], config['password'], "v2.2")
+    except ApiInvalidRequestError:
+        api = get_api(
+            config['mgmt_ip'], config['username'], config['password'], "v2.1")
     config['api'] = api
     access_paths = api.system.network.access_vip.get()['network_paths']
     config['vip1_ip'] = access_paths[0]['ip']
@@ -128,9 +138,12 @@ def checker(args):
         print("Plugins: {}\n".format(", ".join(args.use_plugins)),
               "Tags: {}\n".format(", ".join(args.tags)),
               "Not Tags: {}\n".format(", ".join(args.not_tags)), sep='')
-    load_checks(config, plugins=args.use_plugins, tags=args.tags,
-                not_tags=args.not_tags)
-    gen_report(outfile=args.out, quiet=args.quiet, ojson=args.json)
+    if args.daemon:
+        curses.wrapper(daemon, config, args)
+    else:
+        load_checks(config, plugins=args.use_plugins, tags=args.tags,
+                    not_tags=args.not_tags)
+        gen_report(outfile=args.out, quiet=args.quiet, ojson=args.json)
 
 
 def fixer(args):
@@ -175,6 +188,42 @@ def installer(args):
 
     config = get_config(args)
     run_installers(config, args.use_plugins)
+
+
+def daemon(stdscr, config, args):
+    stdscr.nodelay(1)
+    curses.start_color()
+    curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
+    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_WHITE)
+    kill = 0
+    # interval = args.interval
+    while kill not in (ord('q'), ord('Q')):
+        stdscr.addstr(0, 0, "Running Checks...")
+        stdscr.refresh()
+        common.reset_checks()
+        load_checks(config, plugins=args.use_plugins, tags=args.tags,
+                    not_tags=args.not_tags)
+        s = StringIO.StringIO()
+        gen_report(outfile=s, quiet=args.quiet, ojson=args.json)
+
+        # Draw Report
+        stdscr.clear()
+        stdscr.refresh()
+        stdscr.addstr(2, 0, "Updated: " + str(datetime.datetime.now()))
+        s.seek(0)
+        data = common.strip_invisible(s.read())
+        dlen = len(data.splitlines())
+        stdscr.addstr(4, 0, data)
+        # Check for character
+        timeout = float(args.interval)
+        stdscr.addstr(4+dlen+2, 0, "Press 'q' or 'Q' to exit")
+        while timeout > 0:
+            kill = stdscr.getch()
+            if kill in (ord('q'), ord('Q')):
+                return
+            time.sleep(0.2)
+            timeout -= 0.2
 
 
 if __name__ == "__main__":
@@ -250,6 +299,13 @@ if __name__ == "__main__":
                               help="Disable local checks.  This is useful for "
                                    "plugins that access resources remotely "
                                    "and the local client is not under test")
+    check_parser.add_argument("-d", "--daemon", action="store_true",
+                              help="Run selected checks as a daemon.  Checks "
+                                   "will be run at intervals specified by -i, "
+                                   "--interval")
+    check_parser.add_argument("-i", "--interval", type=float, default=5,
+                              help="Interval in seconds that checks should "
+                                   "be run in daemon mode.")
 
     # Fix Parser Arguments
     fix_parser.add_argument("-i", "--in-report", help="Report file location "
