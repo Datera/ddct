@@ -265,7 +265,7 @@ if __name__ == "__main__":
                               help="Run selected checks as a daemon.  Checks "
                                    "will be run at intervals specified by -i, "
                                    "--interval")
-    check_parser.add_argument("-i", "--interval", type=float, default=60,
+    check_parser.add_argument("-i", "--interval", type=float, default=60 * 5,
                               help="Interval in seconds that checks should "
                                    "be run in daemon mode.")
 

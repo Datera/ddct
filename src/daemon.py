@@ -32,6 +32,9 @@ class WinWrap(object):
         self.x = x
         self.y = y
 
+        self.win.timeout(0)
+        self.win.nodelay(1)
+
     def addstr(self, y, x, s, color=0):
         self.x = x
         self.y = y
@@ -50,10 +53,12 @@ class WinWrap(object):
         self.y += 1
         self.x = self.xbase
 
+    def upy(self, y=1):
+        self.x = self.xbase
+        self.y -= y
+
     def refresh(self, *args):
         self.win.refresh(*args)
-        self.x = self.xbase
-        self.y = self.ybase
 
     def clear(self):
         self.win.clear()
@@ -66,6 +71,12 @@ class WinWrap(object):
     def getch(self):
         return self.win.getch()
 
+    def subpad(self, *args):
+        return self.win.subpad(*args)
+
+    def redrawln(self, *args):
+        self.win.redrawln(*args)
+
 
 def daemon(stdscr, config, args):
     curses.curs_set(INVISIBLE)
@@ -77,7 +88,6 @@ def daemon(stdscr, config, args):
     curses.init_pair(MAGENTA, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
     curses.init_pair(BLACK, curses.COLOR_BLACK, curses.COLOR_WHITE)
     curses.init_pair(WHITE, curses.COLOR_WHITE, curses.COLOR_BLACK)
-    stdscr.nodelay(1)
     my, mx = stdscr.getmaxyx()
     win = WinWrap(curses.newpad(2000, 2000), 1, 1)
     key = 0
@@ -136,14 +146,35 @@ def daemon(stdscr, config, args):
         win.addln("")
         win.addln("Press 'q' or 'Q' to exit")
         win.addln("Press 'r' or 'R' to reload")
+        win.addln("Press 'p' or 'P' to pause")
         win.refresh(0, 0, 0, 0, my-1, mx-1)
         while timeout > 0:
             key = win.getch()
+            win.addln("Checks will be run in {} seconds".format(timeout))
+            win.clrtoeol()
+            win.upy()
+            win.redrawln(win.y, 1)
+            win.refresh(0, 0, 0, 0, my-1, mx-1)
+            if key < 0:
+                time.sleep(0.2)
+                timeout -= 0.2
+                continue
             if key in (ord('q'), ord('Q')):
                 curses.curs_set(VISIBLE)
                 curses.endwin()
                 return
             elif key in (ord('r'), ord('R')):
                 break
-            time.sleep(0.2)
-            timeout -= 0.2
+            elif key in (ord('p'), ord('P')):
+                win.addln("Press any key to unpause", curses.color_pair(BLACK))
+                win.clrtoeol()
+                win.upy()
+                win.refresh(0, 0, 0, 0, my-1, mx-1)
+                subkey = -1
+                while subkey == -1:
+                    subkey = win.getch()
+                    time.sleep(0.1)
+                win.addln("")
+                win.clrtoeol()
+                win.upy()
+                win.refresh(0, 0, 0, 0, my-1, mx-1)
