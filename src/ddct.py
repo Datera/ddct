@@ -8,19 +8,17 @@ Datera Deployment Check Tool
 
 import argparse
 import curses
-import datetime
 import io
 import json
 import os
 import sys
-import StringIO
-import time
 
 
 import common
 from common import ff, gen_report, read_report, check
 from common import check_plugin_table, fix_plugin_table, install_plugin_table
 from checkers import load_checks, print_tags
+from daemon import daemon
 from fixers import run_fixes, print_fixes
 from installers import run_installers
 
@@ -190,42 +188,6 @@ def installer(args):
     run_installers(config, args.use_plugins)
 
 
-def daemon(stdscr, config, args):
-    stdscr.nodelay(1)
-    curses.start_color()
-    curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
-    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
-    curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_WHITE)
-    kill = 0
-    # interval = args.interval
-    while kill not in (ord('q'), ord('Q')):
-        stdscr.addstr(0, 0, "Running Checks...")
-        stdscr.refresh()
-        common.reset_checks()
-        load_checks(config, plugins=args.use_plugins, tags=args.tags,
-                    not_tags=args.not_tags)
-        s = StringIO.StringIO()
-        gen_report(outfile=s, quiet=args.quiet, ojson=args.json)
-
-        # Draw Report
-        stdscr.clear()
-        stdscr.refresh()
-        stdscr.addstr(2, 0, "Updated: " + str(datetime.datetime.now()))
-        s.seek(0)
-        data = common.strip_invisible(s.read())
-        dlen = len(data.splitlines())
-        stdscr.addstr(4, 0, data)
-        # Check for character
-        timeout = float(args.interval)
-        stdscr.addstr(4+dlen+2, 0, "Press 'q' or 'Q' to exit")
-        while timeout > 0:
-            kill = stdscr.getch()
-            if kill in (ord('q'), ord('Q')):
-                return
-            time.sleep(0.2)
-            timeout -= 0.2
-
-
 if __name__ == "__main__":
 
     top_parser = argparse.ArgumentParser(add_help=False)
@@ -303,7 +265,7 @@ if __name__ == "__main__":
                               help="Run selected checks as a daemon.  Checks "
                                    "will be run at intervals specified by -i, "
                                    "--interval")
-    check_parser.add_argument("-i", "--interval", type=float, default=5,
+    check_parser.add_argument("-i", "--interval", type=float, default=60,
                               help="Interval in seconds that checks should "
                                    "be run in daemon mode.")
 
