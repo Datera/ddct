@@ -7,7 +7,7 @@ import sys
 import time
 import threading
 
-from common import vprint, exe_check, ff, parse_mconf, get_os, check_load
+from common import vprint, exe_check, ff, parse_mconf, get_os, check_load, exe
 from common import check, wf
 
 try:
@@ -95,7 +95,8 @@ def check_cpufreq(config):
     vprint("Checking cpufreq settings")
     if not exe_check("which cpupower"):
         if get_os() == "ubuntu":
-            fix = "apt-get install cpupower"
+            version = exe("uname -r").strip()
+            fix = "apt-get install linux-tools-{}".format(version)
         else:
             # RHEL puts this stuff in kernel-tools
             fix = "yum install kernel-tools"
