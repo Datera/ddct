@@ -94,7 +94,7 @@ def check_irq(config):
 def check_cpufreq(config):
     vprint("Checking cpufreq settings")
     if not exe_check("which cpupower"):
-        if get_os == "ubuntu":
+        if get_os() == "ubuntu":
             fix = "apt-get install cpupower"
         else:
             # RHEL puts this stuff in kernel-tools
