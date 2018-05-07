@@ -32,16 +32,15 @@ class WinWrap(object):
         self.x = x
         self.y = y
 
-        self.win.timeout(0)
         self.win.nodelay(1)
 
     def addstr(self, y, x, s, color=0):
         self.x = x
         self.y = y
-        self.win.addstr(self.y, self.x, s, color)
+        self.win.addstr(self.y, self.x, s, curses.color_pair(color))
 
     def addsameln(self, s, color=0):
-        self.win.addstr(self.y, self.x, s, color)
+        self.win.addstr(self.y, self.x, s, curses.color_pair(color))
         self.x += len(s)
 
     def endln(self):
@@ -49,7 +48,7 @@ class WinWrap(object):
         self.y += 1
 
     def addln(self, s, color=0):
-        self.win.addstr(self.y, self.x, s, color)
+        self.win.addstr(self.y, self.x, s, curses.color_pair(color))
         self.y += 1
         self.x = self.xbase
 
@@ -93,7 +92,7 @@ def daemon(stdscr, config, args):
     key = 0
     # interval = args.interval
     while key not in (ord('q'), ord('Q')):
-        win.addln("Running Checks...", curses.color_pair(BLACK))
+        win.addln("Running Checks...", BLACK)
         win.clrtoeol()
         win.refresh(0, 0, 0, 0, my-1, mx-1)
         common.reset_checks()
@@ -121,21 +120,21 @@ def daemon(stdscr, config, args):
                     if not part:
                         continue
                     elif "FAIL" in part:
-                        cp = curses.color_pair(RED)
+                        cp = RED
                     elif "Success" in part:
-                        cp = curses.color_pair(GREEN)
+                        cp = GREEN
                     elif "WARN" in part:
-                        cp = curses.color_pair(YELLOW)
+                        cp = YELLOW
                     elif "ISSUE" in part:
                         length = 15
                         prefix = part[:length]
                         part = part[length:]
-                        win.addsameln(prefix, curses.color_pair(MAGENTA))
+                        win.addsameln(prefix, MAGENTA)
                     elif "FIX" in part:
                         length = 13
                         prefix = part[:length]
                         part = part[length:]
-                        win.addsameln(prefix, curses.color_pair(CYAN))
+                        win.addsameln(prefix, CYAN)
                     win.addsameln(part, cp)
                     win.addsameln("|")
                 win.endln()
@@ -166,7 +165,7 @@ def daemon(stdscr, config, args):
             elif key in (ord('r'), ord('R')):
                 break
             elif key in (ord('p'), ord('P')):
-                win.addln("Press any key to unpause", curses.color_pair(BLACK))
+                win.addln("Press any key to unpause", BLACK)
                 win.clrtoeol()
                 win.upy()
                 win.refresh(0, 0, 0, 0, my-1, mx-1)
