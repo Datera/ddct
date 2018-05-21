@@ -104,10 +104,10 @@ def check_cpufreq(config):
     if not exe_check("cpupower frequency-info --governors | "
                      "grep performance",
                      err=False):
-        return ff(
-            "No 'performance' governor found for system.  If this is a VM,"
-            " governors might not be available and this check can be ignored",
-            "333FBD45")
+        fix = ("No-fix -- if this system is a VM governors might not be "
+               "available and this check can be ignored")
+        return ff("No 'performance' governor found for system", "333FBD45",
+                  fix=fix)
 
 
 @check("Block Devices", "basic", "block_device", "local")
@@ -127,7 +127,9 @@ def check_block_devices(config):
                       " missing from GRUB file", "A65B6D97")
         if ((len(line) > 0 and "elevator=noop" not in line[0]) and
                 (len(line2) > 0 and "elevator=noop" not in line2[0])):
-            return ff("Scheduler is not set to noop", "47BB5083")
+            fix = ("Add 'elevator=noop' to /etc/default/grub in the "
+                   "'GRUB_CMDLINE_LINUX_DEFAULT' line")
+            return ff("Scheduler is not set to noop", "47BB5083", fix=fix)
 
 
 @check("Multipath", "basic", "multipath", "local")
