@@ -141,18 +141,21 @@ def check_multipath(config):
     if not exe_check("which systemctl"):
         if not exe_check("service multipathd status | grep 'Active: active'",
                          err=False):
-            ff("multipathd not enabled", "541C10BF")
+            fix = "service multipathd start"
+            ff("multipathd not enabled", "541C10BF", fix=fix)
     else:
         if not exe_check("systemctl status multipathd | grep 'Active: active'",
                          err=False):
-            ff("multipathd not enabled", "541C10BF")
+            fix = "systemctl start multipathd"
+            ff("multipathd not enabled", "541C10BF", fix=fix)
 
 
 @check("Multipath Conf", "basic", "multipath", "local")
 def check_multipath_conf(config):
     mfile = "/etc/multipath.conf"
     if not os.path.exists(mfile):
-        return ff("/etc/multipath.conf file not found", "1D506D89")
+        fix = "copy multipath.conf file from Datera deployment guide"
+        return ff("/etc/multipath.conf file not found", "1D506D89", fix=fix)
     with io.open(mfile, 'r') as f:
         mconf = parse_mconf(f.read())
 
