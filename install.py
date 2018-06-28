@@ -16,7 +16,7 @@ PIP = os.path.join(VENV, "bin", "pip")
 REQUIREMENTS = os.path.join(DIR, "requirements.txt")
 DDCT = os.path.join(DIR, "ddct")
 DDCTPY = os.path.join(DIR, "src", "ddct.py")
-CONFIG = os.path.join(DIR, "ddct.json")
+CONFIG = os.path.join(DIR, "datera-config.json")
 DDCT_TEMPLATE = """
 #!/bin/bash
 
@@ -86,10 +86,12 @@ def main(args):
         os.chmod(DDCT, st.st_mode | stat.S_IEXEC)
 
     if not os.path.isfile(CONFIG):
-        exe("cd {} && {} -g".format(DIR, DDCT))
+        exe("cd {} && {} --gen-config json".format(DIR, DDCT))
 
     print("DDCT is now installed.  Use '{}' to run DDCT."
-          "\nThe generated config file is located at '{}'".format(
+          "\nThe generated config file is located at '{}'. "
+          "\nIf an existing universal datera config file should be "
+          "used, remove the generated config file".format(
               DDCT, CONFIG))
     return 0
 
