@@ -50,20 +50,26 @@ $ cd ddct
 # Installation is currently only supported on Ubuntu/CentOS systems
 $ ./install.py
 DDCT is now installed.  Use '/home/ubuntu/ddct/ddct' to run DDCT.
-The generated config file is located at '/home/ubuntu/ddct/ddct.json'
+The generated config file is located at '/home/ubuntu/ddct/datera-config.json'.
+If a universal datera config file should be used, remove the generated config file
+```
 
 # Edit the generated config file.
 # Replace the IP addresses and credentials with those of
 # your Datera EDF cluster
-$ vi ddct.json
+$ vi datera-config.json
+```json
 {
-    "mgmt_ip": "172.19.1.41",
-    "password": "password",
     "username": "admin",
+    "password": "password",
+    "tenant": "/root",
+    "mgmt_ip": "1.1.1.1",
+    "api_version": "2.2"
 }
+```
 
 # Finally, run the tool
-$ ./ddct check ddct.json
+$ ./ddct check
 ```
 
 The report will have the following format:
@@ -82,7 +88,7 @@ with each test for use by the fixer to run specific fixes for each.
 Below is an example output.  Tests with multiple failure conditions will have
 all currently check-able reasons listed.
 ```
-(.ddct) ubuntu@master-xenial-bfd6:~/ddct/src$ ./ddct check ddct.json
+(.ddct) ubuntu@master-xenial-bfd6:~/ddct/src$ ./ddct check
 Running checks
 +----------------+----------+----------------------------------------------------------------------------------+----------+
 | Test           | Status   | Reasons                                                                          | IDs      |
@@ -123,21 +129,6 @@ Running checks
 | VIP1           | Success  |                                                                                  |          |
 +----------------+----------+----------------------------------------------------------------------------------+----------+
 ```
-
-This report can then be fed back into the tool via the following invocation:
-
-```
-$ ./ddct fix ddct.json -i test-output.txt
-```
-The -i flag lets you specify a file which has a report like the one above and
-
-If a particular fix should NOT be run, then simply delete the line with its ID
-in the report.
-
-Each fix will only be run one time per tool invocation.  This ensures that
-fixes can be written in a non-idempotent style.
-
-The tool should be run until all checks show "Success"
 
 ---------------
 Windows Support
@@ -206,17 +197,19 @@ generate a json file that we can fill out.
 ```
 $ ./install.py
 DDCT is now installed.  Use '/opt/stack/ddct/ddct' to run DDCT.
-The generated config file is located at '/opt/stack/ddct/ddct.json'
+The generated config file is located at '/opt/stack/ddct/datera-config.json'
 ```
 
 Now we'll edit the generated file and fill out the fields
 ```
-$ vi ddct.json
+$ vi datera-config.json
 
 {
-    "mgmt_ip": "1.1.1.1",
-    "password": "password",
     "username": "admin",
+    "password": "password",
+    "tenant": "/root",
+    "mgmt_ip": "1.1.1.1",
+    "api_version": "2.2"
 }
 ```
 
@@ -226,7 +219,7 @@ The VIP ip addresses will be pulled directly from the cluster.
 Once the config file is filled out, we can run a basic set of checks with the
 following invocation:
 ```
-$./ddct check ddct.json
+$./ddct check
 
 Running checks
 
@@ -289,7 +282,7 @@ service.  So to fix this we install multipath-tools for our OS.
 After fixing any issue, it's a good habit to run the tool again and check
 that there are no other issues in that category
 ```
-$./ddct check ddct.json
+$./ddct check
 
 Running checks
 
@@ -351,7 +344,7 @@ If we want to list the available plugins for DDCT, we can easily do so via
 the "--list-plugins" flag.
 
 ```
-$ ./ddct check ddct.json --list-plugins
+$ ./ddct check --list-plugins
 +-----------------+
 | Check Plugins   |
 +=================+
@@ -363,16 +356,7 @@ $ ./ddct check ddct.json --list-plugins
 +-----------------+
 | cinder_volume   |
 +-----------------+
-```
-This can also be done for fix plugins
-```
-$ ./ddct fix ddct.json --list-plugins
-+---------------+
-| Fix Plugins   |
-+===============+
-| cinder_volume |
-+---------------+
-```
+
 **NOTE**: Not all of the above plugins are available as many are WIP.
 
 Using a plugin is as simple as providing it via the "--use-plugins" flag
@@ -521,9 +505,5 @@ no fix.
 Now that we're all done with "my_driver" checks and fixes, we can load them
 via the following:
 ```bash
-$ ./ddct check ddct.json --use-plugin my_driver
+$ ./ddct check --use-plugin my_driver
 ```
-```bash
-$ ./ddct fix ddct.json --use-plugin my_driver
-```
-Note the above invocations are different for check and fix plugins
