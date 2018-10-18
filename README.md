@@ -69,6 +69,7 @@ $ vi datera-config.json
 ```
 
 # Finally, run the tool
+```
 $ ./ddct check
 ```
 
