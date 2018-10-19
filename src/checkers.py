@@ -310,7 +310,7 @@ def load_plugin_checks(plugins):
         check_list.extend(plugs[plugin].load_checks())
 
 
-def load_checks(config, plugins=None, tags=None, not_tags=None):
+def run_checks(config, plugins=None, tags=None, not_tags=None):
     if plugins:
         load_plugin_checks(plugins)
     threads = []

@@ -12,8 +12,10 @@ import re
 import subprocess
 import socket
 import textwrap
+import StringIO
 
 try:
+    from dfs_sdk import scaffold, ApiError
     import ipaddress
     import paramiko
     import requests
@@ -22,6 +24,7 @@ except ImportError:
     ipaddress = None
     tabulate = None
     paramiko = None
+    scaffold = None
 
 # Python 2/3 compatibility
 try:
@@ -34,6 +37,17 @@ UUID4_STR_RE = re.compile("[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab]"
                           "[a-f0-9]{3}-?[a-f0-9]{12}")
 
 INVISIBLE = re.compile(r"\x1b\[\d+[;\d]*m|\x1b\[\d*\;\d*\;\d*m")
+
+
+def get_config():
+    api = scaffold.get_api(strict=False)
+    config = scaffold.get_config()
+    config['api'] = api
+    access_paths = api.system.network.access_vip.get()['network_paths']
+    config['vip1_ip'] = access_paths[0]['ip']
+    if len(access_paths) > 1:
+        config['vip2_ip'] = access_paths[1]['ip']
+    return config
 
 
 def get_latest_driver_version(tag_url):
@@ -409,19 +423,35 @@ def wf(reasons, uid, fix=None):
     report.add_warning(name, "\n".join(reasons), uid, tags, fix=fix)
 
 
-def gen_report(outfile=None, quiet=False, ojson=False):
+def gen_report(outfile=None, quiet=False, ojson=False, push_data=False):
+
+    def _writer(results, out):
+        try:
+            with io.open(out, 'w+') as f:
+                f.write(results)
+                f.write("\n")
+        except TypeError:
+            out.write(results)
+            out.write("\n")
+
     if ojson:
         results = report.gen_json()
     else:
         results = report.generate()
-    if outfile:
+
+    if push_data:
+        config = get_config()
+        api = config['api']
+        s = StringIO.StringIO()
+        _writer(results, s)
+        s.seek(0)
+        files = {'file': ('ddct-results.txt', s)}
         try:
-            with io.open(outfile, 'w+') as f:
-                f.write(results)
-                f.write("\n")
-        except TypeError:
-            outfile.write(results)
-            outfile.write("\n")
+            api.logs_upload.upload(files=files, ecosystem='python-sdk')
+        except ApiError:
+            api.logs_upload.upload(files=files, ecosystem='openstack')
+    if outfile:
+        _writer(results, outfile)
     if ojson and not quiet:
         print(json.dumps(results, indent=4))
     elif not quiet:

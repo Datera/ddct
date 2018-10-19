@@ -7,10 +7,8 @@ import datetime
 import StringIO
 import time
 
-import common
-
-from checkers import load_checks
-from common import gen_report
+from checkers import run_checks
+from common import gen_report, reset_checks, strip_invisible
 
 INVISIBLE = 0
 VISIBLE = 1
@@ -95,9 +93,9 @@ def daemon(stdscr, config, args):
         win.addln("Running Checks...", BLACK)
         win.clrtoeol()
         win.refresh(0, 0, 0, 0, my-1, mx-1)
-        common.reset_checks()
-        load_checks(config, plugins=args.use_plugins, tags=args.tags,
-                    not_tags=args.not_tags)
+        reset_checks()
+        run_checks(config, plugins=args.use_plugins, tags=args.tags,
+                   not_tags=args.not_tags)
         s = StringIO.StringIO()
         gen_report(outfile=s, quiet=args.quiet, ojson=args.json)
 
@@ -109,7 +107,7 @@ def daemon(stdscr, config, args):
         win.addln("Tags: {}".format(", ".join(args.tags)))
         win.addln("Not Tags: {}".format(", ".join(args.not_tags)))
         s.seek(0)
-        data = common.strip_invisible(s.read())
+        data = strip_invisible(s.read())
         data = data.splitlines()
         for line in data:
             parts = line.split("|")

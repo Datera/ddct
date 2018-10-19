@@ -12,9 +12,9 @@ import sys
 
 
 import common
-from common import gen_report, read_report
+from common import gen_report, read_report, get_config
 from common import check_plugin_table, fix_plugin_table, install_plugin_table
-from checkers import load_checks, print_tags
+from checkers import run_checks, print_tags
 from daemon import daemon
 from fixers import run_fixes, print_fixes
 from installers import run_installers
@@ -48,17 +48,6 @@ VERSION_HISTORY = """
 """
 
 
-def get_config(args):
-    api = scaffold.get_api()
-    config = scaffold.get_config()
-    config['api'] = api
-    access_paths = api.system.network.access_vip.get()['network_paths']
-    config['vip1_ip'] = access_paths[0]['ip']
-    if len(access_paths) > 1:
-        config['vip2_ip'] = access_paths[1]['ip']
-    return config
-
-
 def version(args):
     if args.history:
         print(VERSION_HISTORY)
@@ -79,7 +68,7 @@ def checker(args):
         check_plugin_table()
         sys.exit(0)
 
-    config = get_config(args)
+    config = get_config()
 
     print("Using CONFIG:")
     scaffold.print_config()
@@ -97,9 +86,12 @@ def checker(args):
     if args.daemon:
         curses.wrapper(daemon, config, args)
     else:
-        load_checks(config, plugins=args.use_plugins, tags=args.tags,
-                    not_tags=args.not_tags)
-        gen_report(outfile=args.out, quiet=args.quiet, ojson=args.json)
+        run_checks(config, plugins=args.use_plugins, tags=args.tags,
+                   not_tags=args.not_tags)
+        gen_report(outfile=args.out,
+                   quiet=args.quiet,
+                   ojson=args.json,
+                   push_data=args.push_data)
 
 
 def fixer(args):
@@ -216,7 +208,9 @@ if __name__ == "__main__":
     check_parser.add_argument("-i", "--interval", type=float, default=60 * 5,
                               help="Interval in seconds that checks should "
                                    "be run in daemon mode.")
-
+    check_parser.add_argument("-p", "--push-data", action="store_true",
+                              help="Push report data to cluster for inclusion "
+                                   "in callhome")
     # # Fix Parser Arguments
     # fix_parser.add_argument("-i", "--in-report", help="Report file location "
     #                                                   "to read in")
