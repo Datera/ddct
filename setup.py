@@ -9,7 +9,7 @@ setup(
     long_description='Install Instructions: sudo python setup.py install',
     author='Datera Ecosystem Team',
     author_email='support@datera.io',
-    packages=['ddct'],
+    packages=[''],
     package_dir={'': 'src'},
     # package_data={'dfs_sdk': ['log_cfg/*.json']},
     # include_package_data=True,
