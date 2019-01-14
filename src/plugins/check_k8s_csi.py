@@ -11,7 +11,7 @@ KCTL_MI_RE = re.compile("Minor:\"(\d+)\",")
 KPATH_RE = re.compile("path=(.*?) ;")
 
 SUPPORTED_MAJOR = 1
-SUPPORTED_MINOR = 6
+SUPPORTED_MINOR = 13
 
 
 def calc_version(m1, m2):
@@ -19,7 +19,7 @@ def calc_version(m1, m2):
 
 
 @check("K8S", "driver", "plugin", "local")
-def check_kubernetes_driver(config):
+def check_kubernetes_driver_csi(config):
     # Is kubectl present?
     if not exe_check("which kubectl"):
         return ff("Could not detect kubectl installation", "572B0511")
@@ -38,16 +38,22 @@ def check_kubernetes_driver(config):
             return ff("Kubectl has version {}, which is lower than supported "
                       "version {}".format(found, supported), "D2DA6596")
     # Are dependencies installed?
-    if not exe_check("which mkfs"):
-        ff("mkfs is not installed", "FE13A328")
     if not exe_check("which iscsiadm"):
-        ff("sg3_utils does not appear to be installed", "94BF0B77")
+        ff("open-iscsi does not appear to be installed", "94BF0B77")
     # Is attach-detach disabled in kubelet?
     exstart = exe("systemctl show kubelet.service | grep ExecStart")
-    if "--enable-controller-attach-detach=false" not in exstart:
-        wf("Attach-detach is enabled in kublet's systemctl entry.  Run "
-           "--enable-controller-attach-detach=false when starting kubelet "
-           "to disable", "5B3729F2")
+    if not exstart:
+        if exe_check("microk8s.kubectl"):
+            ff("kubelet service not detected.  microk8s is not currently "
+               "supported", "995EA49E")
+            return
+        else:
+            ff("kubelet service not detected. 'systemctl show kubelet.service'"
+               " returned nothing", "F3C47DDF")
+    if "--allow-privileged" not in exstart:
+        wf("--allow-privileged is not enabled in kublet's systemctl entry.  "
+           "Run --allow-privileged=true when starting kubelet "
+           "to enable", "7475B000")
     if "Active: active" in exe("systemctl status kubelet"):
         kpath = KPATH_RE.search(exstart).group(1)
         exstart = exe("ps -ef | grep {} | grep -v grep".format(kpath))
@@ -57,23 +63,29 @@ def check_kubernetes_driver(config):
                "to disable", "86FFD7F2")
     else:
         ff("The kubelet service is not running", "0762A89B")
+    # iscsi-recv is running?
+    if exe_check("ps -ef | grep iscsi-recv | grep -v grep"):
+        fix = "Run ./setup_iscsi.sh from the datera-csi repository"
+        ff("iscsi-recv binary is not running.", "A8B6BA35", fix=fix)
+
     # Agents are running?
-    pods = exe("kubectl --namespace=datera get pods").strip()
+    pods = exe("kubectl --namespace=kube-system get pods").strip()
     if not pods:
-        return ff("Installer agents and provisioner agents are not running",
-                  "244C0B34")
-    installer_agent = False
-    provisioner_agent = False
+        return ff("CSI plugin pods are not running.", "49BDC893",
+                  fix="Install the CSI plugin deployment yaml.  "
+                      "'kubectl create -f csi.yaml'")
+    controller_pod = False
+    node_pods = False
     for line in pods.split("\n"):
-        if "datera-installer-agent" in line:
-            installer_agent = True
-        if "datera-provisioner-agent" in line:
-            provisioner_agent = True
-    if not installer_agent:
-        ff("Installer agents not found", "08193032")
-    if not provisioner_agent:
-        ff("Provisioner agents not found", "3AAF82CA")
+        if "csi-provisioner-0" in line:
+            controller_pod = True
+        if "csi-node-" in line:
+            node_pods = True
+    if not controller_pod:
+        ff("Controller pod not found", "17FF7B78")
+    if not node_pods:
+        ff("At least one Node pod not found", "2FD6A7B4")
 
 
 def load_checks():
-    return [check_kubernetes_driver]
+    return [check_kubernetes_driver_csi]
