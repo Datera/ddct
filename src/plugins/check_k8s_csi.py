@@ -3,7 +3,7 @@ from __future__ import (print_function, unicode_literals, division,
 
 import re
 
-from common import exe_check, exe, ff, wf, check
+from common import exe_check, exe, ff, check
 
 
 KCTL_MA_RE = re.compile("Major:\"(\d+)\",")
@@ -51,16 +51,16 @@ def check_kubernetes_driver_csi(config):
             ff("kubelet service not detected. 'systemctl show kubelet.service'"
                " returned nothing", "F3C47DDF")
     if "--allow-privileged" not in exstart:
-        wf("--allow-privileged is not enabled in kublet's systemctl entry.  "
+        ff("--allow-privileged is not enabled in kublet's systemctl entry.  "
            "Run --allow-privileged=true when starting kubelet "
            "to enable", "7475B000")
     if "Active: active" in exe("systemctl status kubelet"):
         kpath = KPATH_RE.search(exstart).group(1)
         exstart = exe("ps -ef | grep {} | grep -v grep".format(kpath))
-        if "--enable-controller-attach-detach=false" not in exstart:
-            ff("Attach-detach is enabled in kublet.  Run "
-               "--enable-controller-attach-detach=false when starting kubelet "
-               "to disable", "86FFD7F2")
+        if "--enable-controller-attach-detach=false" in exstart:
+            ff("Attach-detach is disabled in kublet.  Run "
+               "--enable-controller-attach-detach=true when starting kubelet "
+               "to enable", "86FFD7F2")
     else:
         ff("The kubelet service is not running", "0762A89B")
     # iscsi-recv is running?
