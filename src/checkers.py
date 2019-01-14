@@ -39,6 +39,10 @@ def check_iscsi(config):
             fix = "yum install iscsi-initiator-utils"
         ff("iscsiadm is not available, has open-iscsi been installed?",
            "EFBB085C", fix=fix)
+    if not exe_check("ps -ef | grep iscsid | grep -v grep"):
+        fix = "service iscsi start || systemctl start iscsid.service"
+        ff("iscsid is not running.  Is the iscsid service running?",
+           "EB22737E", fix=fix)
 
 
 @check("UDEV", "basic", "udev", "local")
