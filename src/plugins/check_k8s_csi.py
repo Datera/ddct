@@ -18,7 +18,7 @@ def calc_version(m1, m2):
     return int(m1) * 100 + int(m2)
 
 
-@check("K8S", "driver", "plugin", "local")
+@check("K8S CSI", "driver", "plugin", "local", "csi")
 def check_kubernetes_driver_csi(config):
     # Is kubectl present?
     if not exe_check("which kubectl"):
