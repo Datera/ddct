@@ -64,7 +64,7 @@ def check_kubernetes_driver_csi(config):
     else:
         ff("The kubelet service is not running", "0762A89B")
     # iscsi-recv is running?
-    if exe_check("ps -ef | grep iscsi-recv | grep -v grep"):
+    if not exe_check("ps -ef | grep iscsi-recv | grep -v grep"):
         fix = "Run ./setup_iscsi.sh from the datera-csi repository"
         ff("iscsi-recv binary is not running.", "A8B6BA35", fix=fix)
 
