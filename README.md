@@ -18,7 +18,10 @@ Checks
 * CPU Frequency
 * Block Devices
 * Multipath
-* Cinder Volume Driver
+* Cinder Volume Driver (cinder\_volume)
+* Glance Driver (glance)
+* Kubernetes Flex Driver (k8s\_flex)
+* Kubernetes CSI Driver (k8s\_csi)
 
 -------------
 Future Checks
@@ -28,7 +31,6 @@ Future Checks
 * Glance Image Backend Driver
 * Nova Ephemeral Driver
 * Docker Driver
-* Kubernetes Driver
 
 
 -----
@@ -357,10 +359,15 @@ $ ./ddct check --list-plugins
 +-----------------+
 | cinder_volume   |
 +-----------------+
+```
 
 **NOTE**: Not all of the above plugins are available as many are WIP.
 
 Using a plugin is as simple as providing it via the "--use-plugins" flag
+
+```
+$ ./ddct check --use-plugin k8s_csi
+```
 
 
 ---------------
@@ -370,18 +377,18 @@ Writing Plugins
 Creating a plugin for ddct is a straightforward process.
 
 First, determine what the plugin should be called.  For the following
-  example, we're going to use the plugin name "my_driver"
+  example, we're going to use the plugin name "my\_driver"
 
 The name you chose determines the name of the two files than need to be created
-under src/plugins, a check file (check_my_driver.py) and a fix file
-(fix_my_driver.py)
+under src/plugins, a check file (check\_my\_driver.py) and a fix file
+(fix\_my\_driver.py)
 
 The Check file will always have the format "check_$(your_name).py"
 
 The Fix file will always have the format "fix_$(your_name).py"
 
 Once we've placed these two files under src/plugins, add the following template
-to the check file (check_my_driver.py)
+to the check file (check\_my\_driver.py)
 ```python
 from __future__ import (print_function, unicode_literals, division,
                         absolute_import)
@@ -392,7 +399,7 @@ def load_checks():
     return []
 ```
 
-* Add the next template to the fix file (fix_my_driver.py)
+* Add the next template to the fix file (fix\_my\_driver.py)
 ```python
 from __future__ import (print_function, unicode_literals, division,
                         absolute_import)
@@ -403,7 +410,7 @@ def load_fixes():
 ```
 
 All checks your plugin should run should be returned as a list by the
-"load_checks" function.  The "load_checks" function takes no parameters, but
+"load\_checks" function.  The "load\_checks" function takes no parameters, but
 each test function should take a "config" parameter which consists of the
 dictionary below:
 ```json
@@ -464,7 +471,7 @@ Any number of tags may be given to a test.
 
 
 When writing fixes, we associate the test ID with a fix.  Below is an example
-of a fix and the entry it makes in "load_fixes()":
+of a fix and the entry it makes in "load\_fixes()":
 ```python
 def my_ping_fix(config):
     vprint("Fixing missing ping")
@@ -493,17 +500,17 @@ Each fix function will be executed in order.  Fix functions can have either no
 arguments, or accept "config" as the sole argument
 
 If you have a check that has no viable fix, you can put it in the fix file
-and import a function from common called "no_fix" like the example below:
+and import a function from common called "no\_fix" like the example below:
 ```python
 def load_fixes():
     return {"95C9B3AC": [my_ping_fix_1, my_ping_fix_2],
             "8A28D615": [no_fix]}
 ```
 
-This allows the print_fixes function to show in the output that this code has
+This allows the print\_fixes function to show in the output that this code has
 no fix.
 
-Now that we're all done with "my_driver" checks and fixes, we can load them
+Now that we're all done with "my\_driver" checks and fixes, we can load them
 via the following:
 ```bash
 $ ./ddct check --use-plugin my_driver
