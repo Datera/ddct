@@ -118,7 +118,7 @@ def fixer(args):
         print("No codes or report provided, not sure which fixes to run")
         sys.exit(1)
 
-    config = get_config(args)
+    config = get_config()
     run_fixes(codes, config, plugins=args.use_plugins)
 
 
@@ -134,7 +134,7 @@ def installer(args):
         print("At least one plugin must be specified via '-u'")
         sys.exit(1)
 
-    config = get_config(args)
+    config = get_config()
     run_installers(config, args.use_plugins)
 
 
@@ -158,15 +158,15 @@ if __name__ == "__main__":
     # fix_parser = subparsers.add_parser("fix", help="Run fixes")
     # fix_parser.set_defaults(func=fixer)
 
-    # install_parser = subparsers.add_parser("install", help="Install drivers")
-    # install_parser.set_defaults(func=installer)
+    install_parser = subparsers.add_parser("install", help="Install things")
+    install_parser.set_defaults(func=installer)
 
     # Version parser arguments
     version_parser.add_argument("--history", action="store_true",
                                 help="Show version history")
 
     # Common arguments
-    for p in [check_parser]:  # , fix_parser, install_parser]:
+    for p in [check_parser, install_parser]:  # , fix_parser, install_parser]:
         p.add_argument("-o", "--out", help="Output file.Will still print to "
                                            "stdout unless -q option is "
                                            "provided")

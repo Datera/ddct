@@ -12,7 +12,9 @@ import re
 import subprocess
 import socket
 import textwrap
-import StringIO
+from io import StringIO
+
+from contextlib import contextmanager
 
 try:
     from dfs_sdk import scaffold, ApiError
@@ -492,6 +494,17 @@ def vprint(*args, **kwargs):
         print(*args, **kwargs)
 
 
+@contextmanager
+def verbose():
+    global VERBOSE
+    old = VERBOSE
+    VERBOSE = True
+    try:
+        yield
+    finally:
+        VERBOSE = old
+
+
 def exe(cmd):
     vprint("Running cmd:", cmd)
     return subprocess.check_output(cmd, shell=True).decode("utf-8")
@@ -499,7 +512,7 @@ def exe(cmd):
 
 def exe_check(cmd, err=False):
     try:
-        exe(cmd)
+        vprint(exe(cmd))
         if err:
             return False
         return True

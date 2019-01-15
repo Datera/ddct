@@ -4,8 +4,9 @@ from __future__ import (print_function, unicode_literals, division,
 
 import curses
 import datetime
-import StringIO
 import time
+
+from io import StringIO
 
 from checkers import run_checks
 from common import gen_report, reset_checks, strip_invisible

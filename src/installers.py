@@ -15,7 +15,7 @@ def load_plugin_installers(plugins):
             print("Unrecognized install plugin requested:", plugin)
             print("Available install plugins:", ", ".join(plugins.keys()))
             sys.exit(1)
-        install_list.extend(plugs[plugin].install)
+        install_list.append(plugs[plugin].install)
 
 
 def run_installers(config, plugins):
