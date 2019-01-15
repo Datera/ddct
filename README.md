@@ -56,9 +56,9 @@ The generated config file is located at '/home/ubuntu/ddct/datera-config.json'.
 If a universal datera config file should be used, remove the generated config file
 ```
 
-# Edit the generated config file.
-# Replace the IP addresses and credentials with those of
-# your Datera EDF cluster
+Edit the generated config file.  Replace the IP addresses and credentials with
+those of your Datera EDF cluster
+
 $ vi datera-config.json
 ```json
 {
@@ -70,7 +70,8 @@ $ vi datera-config.json
 }
 ```
 
-# Finally, run the tool
+Finally, run the tool
+
 ```
 $ ./ddct check
 ```
