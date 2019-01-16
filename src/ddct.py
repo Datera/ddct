@@ -25,7 +25,7 @@ except ImportError:
     scaffold = None
 
 
-VERSION = "v2.2.0"
+VERSION = "v2.3.0"
 
 VERSION_HISTORY = """
     v1.0.0 -- Initial version
@@ -45,6 +45,8 @@ VERSION_HISTORY = """
               file.  Disabled fix/install since they're not ready yet
               --generate-config-file removed in favor of --gen-config in
               scaffold
+    v2.3.0 -- Added k8s_csi_iscsi installer plugin and fixed support for
+              plugin-based installers
 """
 
 
