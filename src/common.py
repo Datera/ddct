@@ -12,7 +12,10 @@ import re
 import subprocess
 import socket
 import textwrap
-from io import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 from contextlib import contextmanager
 
@@ -257,7 +260,8 @@ class Report(object):
         return {"host": self.hostname,
                 "success": self.success,
                 "warnings": self.warning_by_id,
-                "failures": self.failure_by_id}
+                "failures": self.failure_by_id,
+                "tags": {k: list(v) for k, v in self.tags.items()}}
 
     def code_list(self):
         result = []
@@ -442,16 +446,18 @@ def gen_report(outfile=None, quiet=False, ojson=False, push_data=False):
         results = report.generate()
 
     if push_data:
+        print("Pushing results to cluster")
         config = get_config()
         api = config['api']
-        s = StringIO.StringIO()
-        _writer(results, s)
+        s = StringIO()
+        _writer(json.dumps(report.gen_json(), indent=4), s)
         s.seek(0)
         files = {'file': ('ddct-results.txt', s)}
         try:
             api.logs_upload.upload(files=files, ecosystem='python-sdk')
         except ApiError:
             api.logs_upload.upload(files=files, ecosystem='openstack')
+        print("Results uploaded successfully")
     if outfile:
         _writer(results, outfile)
     if ojson and not quiet:
