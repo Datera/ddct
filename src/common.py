@@ -143,6 +143,7 @@ class Report(object):
         self.failure_id = {}
         self.failure_by_id = {}
         self.tags = {}
+        self.host_state = {}
 
     @staticmethod
     def format_fix(fix, uid):
@@ -191,6 +192,13 @@ class Report(object):
             self.tags[name] = set()
         for tag in tags:
             self.tags[name].add(tag)
+
+    def add_host_state(self, key, value):
+        if not self.hostname:
+            self.hostname = socket.gethostname()
+        if "hostname" in self.host_state:
+            self.host_state = self.hostname
+        self.host_state[key] = value
 
     def generate(self):
         if not self.hostname:
@@ -247,11 +255,31 @@ class Report(object):
                       "\n".join(failures),
                       "\n".join(sorted(self.tags[name]))])
 
-        result = tabulate(
+        r1 = tabulate(
             f + w + s,
             headers=["Test", "Status", "Reasons", "Tags"],
             tablefmt="grid")
-        result = "\n".join(("HOST: {}".format(self.hostname), result))
+
+        s = []
+        for k, v in self.host_state.items():
+            if type(v) == dict:
+                acc1 = []
+                for a, b in sorted(v.items()):
+                    if type(b) == dict:
+                        acc2 = []
+                        for c, d in sorted(b.items()):
+                            acc2.append("  {}: {}".format(c, d))
+                        b = "\n".join(acc2)
+                        acc1.append("{}:\n{}".format(a, b))
+                    else:
+                        acc1.append("{}: {}".format(a, b))
+                v = "\n".join(acc1)
+            s.append((k, v))
+        r2 = tabulate(
+            sorted(s),
+            headers=["State", "Value"],
+            tablefmt="grid")
+        result = "\n".join(("HOST: {}".format(self.hostname), r1, r2))
         return result
 
     def gen_json(self):
@@ -261,7 +289,8 @@ class Report(object):
                 "success": self.success,
                 "warnings": self.warning_by_id,
                 "failures": self.failure_by_id,
-                "tags": {k: list(v) for k, v in self.tags.items()}}
+                "tags": {k: list(v) for k, v in self.tags.items()},
+                "host_state": self.host_state}
 
     def code_list(self):
         result = []
@@ -427,6 +456,10 @@ def wf(reasons, uid, fix=None):
         report.add_warning(name, reasons, uid, tags, fix=fix)
         return
     report.add_warning(name, "\n".join(reasons), uid, tags, fix=fix)
+
+
+def hs(k, v):
+    report.add_host_state(k, v)
 
 
 def gen_report(outfile=None, quiet=False, ojson=False, push_data=False):

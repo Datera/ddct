@@ -15,6 +15,7 @@ import common
 from common import gen_report, read_report, get_config
 from common import check_plugin_table, fix_plugin_table, install_plugin_table
 from checkers import run_checks, print_tags
+from state import get_host_state
 from daemon import daemon
 from fixers import run_fixes, print_fixes
 from installers import run_installers
@@ -90,6 +91,8 @@ def checker(args):
     else:
         run_checks(config, plugins=args.use_plugins, tags=args.tags,
                    not_tags=args.not_tags)
+        if args.host_state:
+            get_host_state(config)
         gen_report(outfile=args.out,
                    quiet=args.quiet,
                    ojson=args.json,
@@ -213,6 +216,8 @@ if __name__ == "__main__":
     check_parser.add_argument("-p", "--push-data", action="store_true",
                               help="Push report data to cluster for inclusion "
                                    "in callhome")
+    check_parser.add_argument("-k", "--host-state", action="store_true",
+                              help="Enable host-state output during check")
     # # Fix Parser Arguments
     # fix_parser.add_argument("-i", "--in-report", help="Report file location "
     #                                                   "to read in")

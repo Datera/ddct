@@ -3,4 +3,6 @@ paramiko
 requests
 six
 tabulate
+distro
+psutil
 git+http://github.com/Datera/python-sdk
