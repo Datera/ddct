@@ -16,7 +16,9 @@
 .EXAMPLE
     Copy this file to the Desktop of the Admin account
     Ensure the Datera powershell-sdk is installed
-    (SEE: https://github.com/Datera/powershell-sdk)
+    (SEE: https://github.com/Datera/powershell-sdk) and a valid Universal
+    Datera Config file is available with the connection credentials to the
+    desired Datera DSP cluster.
 
     Run
     C:\Users\Admin\Desktop\check_windows.ps1 -human
