@@ -203,14 +203,15 @@ class Report(object):
     def generate(self):
         if not self.hostname:
             self.hostname = socket.gethostname()
-        try:
-            longest = max(map(
-                lambda x: len(x),
-                [val for sublist in
-                    list(self.failure.values()) + list(self.warning.values())
-                    for val in sublist]))
-        except ValueError:
-            longest = 30
+        # try:
+        #     longest = max(map(
+        #         lambda x: len(x),
+        #         [val for sublist in
+        #             list(self.failure.values()) + list(self.warning.values())
+        #             for val in sublist]))
+        # except ValueError:
+        #     longest = 30
+        wrap = 60
         s = list(map(lambda x: (
             x,
             SUCCESS,
@@ -220,36 +221,29 @@ class Report(object):
             sorted(self.success)))
 
         w = []
-        for name, wids in self.warning_id.items():
+        for name, wids in sorted(self.warning_id.items()):
             warnings = []
-            nwids = []
             for wid in wids:
-                nwids.append(wid)
                 warnings.append(self.warning_by_id[wid][1])
                 fix = self.fix_by_id.get(wid)
                 if fix:
-                    nwids.append("\n")
                     warnings.append(fix)
             for index, warning in enumerate(warnings):
-                if "FIX" in warning:
-                    warnings[index] = _wraptxt(warning, longest) + "\n"
+                warnings[index] = _wraptxt(warning, wrap) + "\n"
             w.append([name,
                       WARNING,
                       "\n".join(warnings),
                       "\n".join(sorted(self.tags[name]))])
         f = []
-        for name, fids in self.failure_id.items():
+        for name, fids in sorted(self.failure_id.items()):
             failures = []
-            nfids = []
             for fid in fids:
-                nfids.append(fid)
                 failures.append(self.failure_by_id[fid][1])
                 fix = self.fix_by_id.get(fid)
                 if fix:
                     failures.append(fix)
             for index, failure in enumerate(failures):
-                if "FIX" in failure:
-                    failures[index] = _wraptxt(failure, longest) + "\n"
+                failures[index] = _wraptxt(failure, wrap)
             f.append([name,
                       FAILURE,
                       "\n".join(failures),
@@ -260,26 +254,29 @@ class Report(object):
             headers=["Test", "Status", "Reasons", "Tags"],
             tablefmt="grid")
 
-        s = []
-        for k, v in self.host_state.items():
-            if type(v) == dict:
-                acc1 = []
-                for a, b in sorted(v.items()):
-                    if type(b) == dict:
-                        acc2 = []
-                        for c, d in sorted(b.items()):
-                            acc2.append("  {}: {}".format(c, d))
-                        b = "\n".join(acc2)
-                        acc1.append("{}:\n{}".format(a, b))
-                    else:
-                        acc1.append("{}: {}".format(a, b))
-                v = "\n".join(acc1)
-            s.append((k, v))
-        r2 = tabulate(
-            sorted(s),
-            headers=["State", "Value"],
-            tablefmt="grid")
-        result = "\n".join(("HOST: {}".format(self.hostname), r1, r2))
+        if self.host_state:
+            s = []
+            for k, v in self.host_state.items():
+                if type(v) == dict:
+                    acc1 = []
+                    for a, b in sorted(v.items()):
+                        if type(b) == dict:
+                            acc2 = []
+                            for c, d in sorted(b.items()):
+                                acc2.append("  {}: {}".format(c, d))
+                            b = "\n".join(acc2)
+                            acc1.append("{}:\n{}".format(a, b))
+                        else:
+                            acc1.append("{}: {}".format(a, b))
+                    v = "\n".join(acc1)
+                s.append((k, v))
+            r2 = tabulate(
+                sorted(s),
+                headers=["State", "Value"],
+                tablefmt="grid")
+            result = "\n".join(("HOST: {}".format(self.hostname), r1, r2))
+        else:
+            result = r1
         return result
 
     def gen_json(self):

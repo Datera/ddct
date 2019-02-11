@@ -9,6 +9,7 @@ import threading
 
 from common import vprint, exe_check, ff, parse_mconf, get_os, check_load, exe
 from common import check, wf
+from mtu import load_checks as mtu_checks
 
 try:
     from tabulate import tabulate
@@ -302,6 +303,7 @@ check_list = [check_os,
               vip1_check,
               vip2_check,
               callhome_check]
+check_list.extend(mtu_checks())
 
 
 def load_plugin_checks(plugins):
