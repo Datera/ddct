@@ -98,6 +98,11 @@ def check_arp(config):
                      err=False):
         fix = "sysctl net.ipv4.conf.all.arp_ignore=1"
         ff("net.ipv4.conf.all.arp_ignore != 1 in sysctl", "BDB4D5D8", fix=fix)
+    gcf = "/proc/sys/net/ipv4/route/gc_interval"
+    gc = int(exe("cat {}".format(gcf)))
+    if gc != 5:
+        fix = "echo 5 > {}".format(gcf)
+        ff("{} is currently set to {}".format(gcf, gc), "A06CD19F", fix=fix)
 
 
 @check("IRQ", "basic", "irq", "local")
