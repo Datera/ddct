@@ -44,6 +44,28 @@ def check_iscsi(config):
         fix = "service iscsi start || systemctl start iscsid.service"
         ff("iscsid is not running.  Is the iscsid service running?",
            "EB22737E", fix=fix)
+    ifile = "/etc/iscsi/iscsid.conf"
+    with io.open(ifile, 'r') as f:
+        iconf = f.readlines()
+    noopt = "node.session.timeo.noop_out_timeout"
+    noopt_found = False
+    noopi = "node.session.timeo.noop_out_interval"
+    noopi_found = False
+    for line in enumerate(iconf):
+        if noopt in line:
+            noopt_found = True
+            if "2" not in line:
+                ff("{} is not set to '2' in iscsid.conf".format(noopt),
+                   "F6A49337")
+        if noopi in line:
+            noopi_found = True
+            if "2" not in line:
+                ff("{} is not set to '2' in iscsid.conf".format(noopi),
+                   "E48C1907")
+    if not noopt_found:
+        ff("'{} = 2' is not present in iscsid.conf".format(noopt), "E29BF18A")
+    if not noopi_found:
+        ff("'{} = 2' is not present in iscsid.conf".format(noopi), "A2EED511")
 
 
 @check("UDEV", "basic", "udev", "local")
