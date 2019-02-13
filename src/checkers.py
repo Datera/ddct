@@ -55,17 +55,23 @@ def check_iscsi(config):
     noopt_found = False
     noopi = "node.session.timeo.noop_out_interval"
     noopi_found = False
-    for line in iconf:
-        if noopt in line:
+    for index, line in enumerate(iconf):
+        if not noopt_found and noopt in line:
             noopt_found = True
             if "2" not in line:
                 ff("{} is not set to '2' in iscsid.conf".format(noopt),
                    "F6A49337")
+        elif noopt_found and noopt in line:
+            wf("{} duplicate found in iscsid.conf, line {}".format(
+                noopt, index), "D3E55910")
         if noopi in line:
             noopi_found = True
             if "2" not in line:
                 ff("{} is not set to '2' in iscsid.conf".format(noopi),
                    "E48C1907")
+        elif noopi_found and noopi in line:
+            wf("{} duplicate found in iscsid.conf, line {}".format(
+                noopi, index), "CA9AA865")
     if not noopt_found:
         ff("'{} = 2' is not present in iscsid.conf".format(noopt), "E29BF18A")
     if not noopi_found:
