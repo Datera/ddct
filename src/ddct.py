@@ -109,7 +109,7 @@ def fixer(args):
     # Global flags
     common.VERBOSE = args.verbose
 
-    if args.print:
+    if args.print_codes:
         print_fixes(args.use_plugins)
         sys.exit(0)
 
@@ -177,7 +177,7 @@ if __name__ == "__main__":
                                 help="Show version history")
 
     # Common arguments
-    for p in [check_parser, install_parser]:  # , fix_parser, install_parser]:
+    for p in [check_parser, fix_parser, install_parser]:
         p.add_argument("-o", "--out", help="Output file.Will still print to "
                                            "stdout unless -q option is "
                                            "provided")
@@ -229,7 +229,7 @@ if __name__ == "__main__":
                                                       "to read in")
     fix_parser.add_argument("-d", "--codes", nargs="*", default=[],
                             help="Used for specifying codes manually")
-    fix_parser.add_argument("-p", "--print", action="store_true",
+    fix_parser.add_argument("-p", "--print-codes", action="store_true",
                             help="Print out the tool's currently supported "
                                  "fixes and codes")
 

@@ -57,14 +57,14 @@ def main(args):
         # Install prereqs Ubuntu
         try:
             exe("sudo apt-get install python-virtualenv python-dev "
-                "libffi-dev libssl-dev -y")
+                "libffi-dev libssl-dev gcc -y")
         # Install prereqs Centos
         except subprocess.CalledProcessError as e:
             vprint(e)
             print("Ubuntu packages failed, trying RHEL packages")
             try:
                 exe("sudo yum install python-virtualenv python-devel "
-                    "libffi-devel openssl-devel -y")
+                    "libffi-devel openssl-devel gcc -y")
             except subprocess.CalledProcessError as e:
                 print(e)
                 print("RHEL packages failed")

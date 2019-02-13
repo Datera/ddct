@@ -22,6 +22,10 @@ FETCH_SO_URL = ("https://raw.githubusercontent.com/Datera/docker-driver/"
 UDEV_URL = ("https://raw.githubusercontent.com/Datera/docker-driver/master/"
             "scripts/assets/99-iscsi-luns.rules")
 
+NET_FIX = ("Check the network connection.  If this failure is intermittent "
+           "check for duplicate ips.  This can also be due to MTU "
+           "fragmentation")
+
 
 @check("OS", "basic", "os", "local")
 def check_os(config):
@@ -265,7 +269,8 @@ def check_multipath_conf(config):
 def mgmt_check(config):
     mgmt = config["mgmt_ip"]
     if not exe_check("ping -c 2 -W 1 {}".format(mgmt), err=False):
-        ff("Could not ping management ip {}".format(mgmt), "65FC68BB")
+        ff("Could not ping management ip {}".format(mgmt), "65FC68BB",
+           fix=NET_FIX)
     timeout = 5
     while not exe_check(
             "ip neigh show | grep {} | grep REACHABLE".format(mgmt)):
@@ -282,7 +287,7 @@ def mgmt_check(config):
 def vip1_check(config):
     vip1 = config["vip1_ip"]
     if not exe_check("ping -c 2 -W 1 {}".format(vip1), err=False):
-        ff("Could not ping vip1 ip {}".format(vip1), "1827147B")
+        ff("Could not ping vip1 ip {}".format(vip1), "1827147B", fix=NET_FIX)
     timeout = 5
     while not exe_check(
             "ip neigh show | grep {} | grep REACHABLE".format(vip1)):
@@ -298,7 +303,7 @@ def vip1_check(config):
 def vip2_check(config):
     vip2 = config.get("vip2_ip")
     if vip2 and not exe_check("ping -c 2 -W 1 {}".format(vip2), err=False):
-        ff("Could not ping vip2 ip {}".format(vip2), "3D76CE5A")
+        ff("Could not ping vip2 ip {}".format(vip2), "3D76CE5A", fix=NET_FIX)
     timeout = 5
     while not exe_check(
             "ip neigh show | grep {} | grep REACHABLE".format(vip2)):

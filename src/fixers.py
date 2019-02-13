@@ -314,10 +314,10 @@ def print_fixes(plugins):
     print("Supported Fixes")
     if plugins:
         load_plugin_fixes(plugins)
+    fd = filter(lambda x: x[1], fix_dict.items())
     t = tabulate(
         sorted(map(lambda x: (x[0],
-               ", ".join(map(lambda y: y.__doc__, x[1]))),
-            fix_dict.items())),
+               ", ".join(map(lambda y: y.__doc__, x[1]))), fd)),
         headers=["Code", "Fix Functions"],
         tablefmt="grid")
     print(t)
