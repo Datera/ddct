@@ -7,7 +7,8 @@ import sys
 import uuid
 
 
-from common import vprint, exe, get_os, idempotent, fix_load
+from common import vprint, exe, get_os, idempotent, fix_load, load_run_fixes
+from common import save_run_fixes
 
 from tabulate import tabulate
 
@@ -199,15 +200,114 @@ def fix_multipath_conf_1():
 
 
 fix_dict = {
-    "9000C3B6": [fix_arp_1],
-    "BDB4D5D8": [fix_arp_2],
-    "B19D9FF1": [fix_irq_1],
+    "057AF23D": [no_fix],
+    "0762A89B": [],
+    "08193032": [],
+    "09E37E51": [],
+    "0BB2848F": [],
+    "0D862946": [],
+    "11F30DCF": [],
+    "17FF7B78": [],
+    "1827147B": [],
+    "1C8F2E07": [],
+    "1D506D89": [fix_multipath_conf_1],
+    "1D8C438C": [],
     "20CEE732": [fix_cpufreq_1, fix_cpufreq_2],
-    "A65B6D97": [no_fix],
-    "47BB5083": [fix_block_devices_1],
+    "228241A8": [],
+    "22DC6275": [],
+    "2330CACB": [],
+    "244C0B34": [],
     "2D18685C": [fix_multipath_1, fix_multipath_2],
+    "2FD6A7B4": [],
+    "333FBD45": [],
+    "3A6A78D1": [],
+    "3AAF82CA": [],
+    "3C33D70D": [],
+    "3D76CE5A": [],
+    "3F9F67BF": [],
+    "42481C71": [],
+    "42BAAC76": [],
+    "47BB5083": [fix_block_devices_1],
+    "49BDC893": [],
+    "4B16C4F7": [],
+    "4F6B8D91": [],
+    "525BAAB0": [],
+    "540C3008": [],
     "541C10BF": [fix_multipath_2],
-    "1D506D89": [fix_multipath_conf_1]}
+    "572B0511": [],
+    "5B3729F2": [],
+    "5B6EFC71": [],
+    "5FEC0454": [],
+    "621A6F51": [],
+    "642753A0": [],
+    "6515ADB8": [],
+    "65FC68BB": [],
+    "675E2887": [],
+    "680E61DB": [],
+    "6C531C5D": [],
+    "6D03F50B": [],
+    "6E281004": [],
+    "6F7B6A25": [],
+    "70191A9A": [],
+    "710BFC7E": [],
+    "7475B000": [],
+    "75A8A315": [],
+    "797A6031": [],
+    "7B98CFA1": [],
+    "8208B9E7": [],
+    "842A4DB1": [],
+    "86FFD7F2": [],
+    "8A28D615": [],
+    "8DBC87E8": [],
+    "9000C3B6": [fix_arp_1],
+    "945148B0": [],
+    "94BF0B77": [],
+    "95C9B3AC": [],
+    "995EA49E": [],
+    "9990F32F": [],
+    "99B9D136": [],
+    "A06CD19F": [],
+    "A2EED511": [],
+    "A37FD778": [],
+    "A433E6C6": [],
+    "A4402034": [],
+    "A4CA0D72": [],
+    "A65B6D97": [no_fix],
+    "A8B6BA35": [],
+    "A9DF3F8C": [],
+    "AA27965F": [],
+    "AF3DB8B3": [],
+    "AFCBBDD7": [],
+    "B106D1CD": [],
+    "B19D9FF1": [fix_irq_1],
+    "B3BF691D": [],
+    "B5D29621": [],
+    "B65FD598": [],
+    "B74CEBC3": [],
+    "B845D5B1": [],
+    "B8C8A19C": [],
+    "BDB4D5D8": [fix_arp_2],
+    "BF6A912A": [],
+    "C1802A6E": [],
+    "C2B8C696": [],
+    "C521E039": [],
+    "C5B86514": [],
+    "CBF8CC4C": [],
+    "D2DA6596": [],
+    "D7F667BC": [],
+    "DD51CEC9": [],
+    "E29BF18A": [],
+    "E48C1907": [],
+    "E9F02293": [],
+    "EB22737E": [],
+    "EC2D3621": [],
+    "EFBB085C": [],
+    "F3C47DDF": [],
+    "F5DEC8B1": [],
+    "F6A49337": [],
+    "FCFE3444": [],
+    "FE13A328": [],
+}
 
 
 def print_fixes(plugins):
@@ -234,12 +334,20 @@ def load_plugin_fixes(plugins):
 
 
 def run_fixes(codes, config, plugins=None):
-    if plugins:
-        load_plugin_fixes(plugins)
-    for code in codes:
-        fixes = fix_dict[code]
-        for fix in fixes:
-            try:
-                fix()
-            except TypeError:
-                fix(config)
+    load_run_fixes()
+    reraise = False
+    try:
+        if plugins:
+            load_plugin_fixes(plugins)
+        for code in codes:
+            fixes = fix_dict[code]
+            for fix in fixes:
+                try:
+                    fix()
+                except TypeError:
+                    fix(config)
+    except Exception:
+        reraise = True
+    save_run_fixes()
+    if reraise:
+        raise

@@ -15,10 +15,16 @@ import common
 from common import gen_report, read_report, get_config
 from common import check_plugin_table, fix_plugin_table, install_plugin_table
 from checkers import run_checks, print_tags
-from state import get_host_state
 from daemon import daemon
 from fixers import run_fixes, print_fixes
 from installers import run_installers
+
+try:
+    from state import get_host_state
+except ImportError:
+    print("Not able to import from state.py, --host-state will not be "
+          "available")
+    get_host_state = None
 
 try:
     from dfs_sdk import scaffold
@@ -160,8 +166,8 @@ if __name__ == "__main__":
                                          parents=[top_parser])
     check_parser.set_defaults(func=checker)
 
-    # fix_parser = subparsers.add_parser("fix", help="Run fixes")
-    # fix_parser.set_defaults(func=fixer)
+    fix_parser = subparsers.add_parser("fix", help="Run fixes")
+    fix_parser.set_defaults(func=fixer)
 
     install_parser = subparsers.add_parser("install", help="Install things")
     install_parser.set_defaults(func=installer)
@@ -219,13 +225,13 @@ if __name__ == "__main__":
     check_parser.add_argument("-k", "--host-state", action="store_true",
                               help="Enable host-state output during check")
     # # Fix Parser Arguments
-    # fix_parser.add_argument("-i", "--in-report", help="Report file location "
-    #                                                   "to read in")
-    # fix_parser.add_argument("-d", "--codes", nargs="*", default=[],
-    #                         help="Used for specifying codes manually")
-    # fix_parser.add_argument("-p", "--print", action="store_true",
-    #                         help="Print out the tool's currently supported "
-    #                              "fixes and codes")
+    fix_parser.add_argument("-i", "--in-report", help="Report file location "
+                                                      "to read in")
+    fix_parser.add_argument("-d", "--codes", nargs="*", default=[],
+                            help="Used for specifying codes manually")
+    fix_parser.add_argument("-p", "--print", action="store_true",
+                            help="Print out the tool's currently supported "
+                                 "fixes and codes")
 
     # Install Parser Arguments
     pass

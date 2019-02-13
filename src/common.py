@@ -42,6 +42,8 @@ UUID4_STR_RE = re.compile("[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab]"
                           "[a-f0-9]{3}-?[a-f0-9]{12}")
 
 INVISIBLE = re.compile(r"\x1b\[\d+[;\d]*m|\x1b\[\d*\;\d*\;\d*m")
+TMP_DIR = '/tmp/.ddct/'
+FIXES_FILE = os.path.join(TMP_DIR, 'fixes_run')
 
 
 def get_config():
@@ -299,7 +301,7 @@ class Report(object):
 
 
 report = Report()
-func_run = set()
+fixes_run = set()
 
 
 def reset_checks():
@@ -307,16 +309,27 @@ def reset_checks():
     report = Report()
 
 
-def idempotent(func):
-    if func.__name__ in func_run:
-        return
-    func_run.add(func.__name__)
-
-    @functools.wraps(func)
+def idempotent(fix):
+    @functools.wraps(fix)
     def _wrapper():
-        func()
+        if fix.__name__ in fixes_run:
+            return
+        fix()
+        fixes_run.add(fix.__name__)
 
     return _wrapper
+
+
+def load_run_fixes():
+    with io.open(FIXES_FILE, 'r') as f:
+        for fix in json.loads(f.read()):
+            fixes_run.add(fix)
+
+
+def save_run_fixes():
+    j = json.dumps(list(fixes_run))
+    with io.open(FIXES_FILE, 'w+') as f:
+        f.write(j)
 
 
 def check(test_name, *tags):
