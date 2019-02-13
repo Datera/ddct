@@ -55,7 +55,7 @@ def check_iscsi(config):
     noopt_found = False
     noopi = "node.session.timeo.noop_out_interval"
     noopi_found = False
-    for line in enumerate(iconf):
+    for line in iconf:
         if noopt in line:
             noopt_found = True
             if "2" not in line:
