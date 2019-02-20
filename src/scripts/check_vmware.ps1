@@ -22,6 +22,13 @@ Requirements:
 ########
 ########  User Input Section
 ########
+Param(
+    [Parameter(Mandatory=$false)]
+    [switch]$Confirm = $false,
+
+    [Parameter(Mandatory=$false)]
+    [switch]$AllHosts = $false
+)
 
 ## That means script output tells user what is happening throughout
 ## the script.
@@ -29,7 +36,6 @@ $verbose = $true
 
 ## That means no confirmation received for the command to change
 ## the advanced settings
-$Confirm = $false
 
 ## Before you run this script, you have to make sure all ESXi hosts
 ## must be actively managed by Windows vCenter server.
@@ -70,19 +76,8 @@ Write-Output " "
 
 
 ########
-########    Option 1: ATS heartbeat
+########    Fix 1: ATS heartbeat
 ########
-
-Write-Output ("Disable ATS heartbeat on all ESXi hosts, otherwise iSCSI will misfunction")
-
-Foreach($esx in $vmhosts){
-
-    Get-AdvancedSetting -Entity $esx -Name VMFS3.UseATSForHBOnVMFS5 | Set-AdvancedSetting -Value 0 -Confirm:$false
-
-    if($verbose = $true){
-        Write-Output "ATS heartbeat is disabled for " + $esx.name
-    }
-}
 
 <#
 1 | Disable ATS Heartbeat on each ESXi host
@@ -92,11 +87,39 @@ Alternate method of implementation:
 For details, please refer to https://kb.vmware.com/s/article/2113956
 #>
 
+
+Write-Output ("Disable ATS heartbeat on all ESXi hosts, otherwise iSCSI will malfunction")
+
+Foreach($esx in $vmhosts){
+
+    $ats = Get-AdvancedSetting -Entity $esx -Name VMFS3.UseATSForHBOnVMFS5
+    If ($Confirm) {
+        $ats | Set-AdvancedSetting -Value 0 -Confirm:$false
+        if($verbose = $true){
+            Write-Output "ATS heartbeat is disabled for " + $esx.name
+        }
+    } Else {
+        Write-Output "Existing ATS Settings: $esx -- $ats"
+    }
+}
+
 ########
-########  The following parameters change needs no iSCSI target at all on ESXi
+########  The following change can interrupt service for iSCSI targets on ESXi
 ########
 
-If ($verbose = $true){
+########
+########    Fix 2: Queue Depth
+########
+
+<#
+2 | Set Queue Depth for Software iSCSI initiator to 32
+Default value is 128 or 256
+Datera recommended value is 32
+Alternate method of implementation:
+    esxcli system module parameters set -m iscsi_vmk -p iscsivmk_LunQDepth=32
+#>
+
+
 Write-Output "
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!                                                       !!
@@ -109,57 +132,45 @@ Write-Output "
     !!     Re-run this script again after clean them up      !!
     !! 2.  If you really want to run this script no matter   !!
     !!     what, you know what you're doing and it may cause !!
-    !!     system misfunction.                               !!
-    !!     You may replace the following 8 lines with the    !!
-    !!     following line                                    !!
-    !!                                                       !!
-    !!     `$hostsToBeExecuted = `$vmhosts                     !!
+    !!     system misfunction you may run this script        !!
+    !!     with the -Confirm flag                            !!
     !!                                                       !!
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 "
-}
-
-$hostsToBeExecuted = @()
-Foreach ($esx in $vmhosts) {
-    $IscsiHba = $esx | Get-VMHostHba -Type iScsi | Where {$_.Model -eq "iSCSI Software Adapter"}
-    $IscsiTarget = Get-IScsiHbaTarget -IScsiHba $IscsiHba
-    If ($IscsiTarget -eq $null) {
-        $hostsToBeExecuted +=  $esx
+If (($AllHosts -eq $true) -and ($Confirm -eq $true)) {
+    Write-output "WARNING: Running on all hosts even with iSCSI targets"
+    $hostsToBeExecuted = $vmhosts
+} Else {
+    $hostsToBeExecuted = @()
+    Foreach ($esx in $vmhosts) {
+        $IscsiHba = $esx | Get-VMHostHba -Type iScsi | Where {$_.Model -eq "iSCSI Software Adapter"}
+        $IscsiTarget = Get-IScsiHbaTarget -IScsiHba $IscsiHba
+        If ($IscsiTarget -eq $null) {
+            $hostsToBeExecuted +=  $esx
+        }
     }
+    Write-Output "====== List ESXi hosts without iSCSI target that we can run this script ======"
+    Write-Output $hostsToBeExecuted
+    Write-Output " "
 }
-
-Write-Output "====== List ESXi hosts without iSCSI target taht we can run this script ======"
-Write-Output $hostsToBeExecuted
-Write-Output " "
-
-
-########
-########    Option 2: Queue Depth
-########
-
-<#
-2 | Set Queue Depth for Software iSCSI initiator to 32
-Default value is 128 or 256
-Datera recommended value is 32
-Alternate method of implementation:
-    esxcli system module parameters set -m iscsi_vmk -p iscsivmk_LunQDepth=32
-#>
 
 $DateraIscsiQueueDepth = 32
-Foreach ($esx in $hostsToBeExecuted){
-    $esxcli = get-esxcli -VMHost $esx
+If ($Confirm) {
+    Foreach ($esx in $hostsToBeExecuted){
+        $esxcli = get-esxcli -VMHost $esx
 
-    If ($esx.Version.Split(".")[0] -ge "6"){
-        #vSphere 6.x or greater
-        $esxcli.system.module.parameters.set($null, $null,"iscsi_vmk","iscsivmk_LunQDepth=$DateraIscsiQueueDepth")
-    }else{
-        #vSphere 5.x command
-        $esxcli.system.module.parameters.set($null,"iscsi_vmk","iscsivmk_LunQDepth=$DateraIscsiQueueDepth")
-    }
+        If ($esx.Version.Split(".")[0] -ge "6"){
+            #vSphere 6.x or greater
+            $esxcli.system.module.parameters.set($null, $null,"iscsi_vmk","iscsivmk_LunQDepth=$DateraIscsiQueueDepth")
+        } Else {
+            #vSphere 5.x command
+            $esxcli.system.module.parameters.set($null,"iscsi_vmk","iscsivmk_LunQDepth=$DateraIscsiQueueDepth")
+        }
 
-    $esxcli.system.module.parameters.list("iscsi_vmk") | Where{$_.Name -eq "iscsivmk_LunQDepth"}
-    If ($verbose = $true){
-        Write-Output ("Queue depth for " + $esx.Name + " is set to $DateraIscsiQueueDepth")
+        $esxcli.system.module.parameters.list("iscsi_vmk") | Where{$_.Name -eq "iscsivmk_LunQDepth"}
+        If ($verbose = $true){
+            Write-Output ("Queue depth for " + $esx.Name + " is set to $DateraIscsiQueueDepth")
+        }
     }
 }
 
@@ -194,10 +205,15 @@ Foreach($esx in $hostsToBeExecuted){
     $options[0].value = $false
 
     $StorageSystem = Get-View -ID $StorageSystemId
-    $StorageSystem.UpdateInternetScsiAdvancedOptions($IscsiSWAdapterHbaId, $null, $options)
+    If($verbose) {
+        Write-Output "StorageSystem: $StorageSystem"
+    }
+    If ($Confirm) {
+        $StorageSystem.UpdateInternetScsiAdvancedOptions($IscsiSWAdapterHbaId, $null, $options)
 
-    If ($verbose = $true){
-        Write-Output ("Disable DelayedAck of Software iSCSI adapter on " + $esx.name)
+        If ($verbose = $true){
+            Write-Output "Disable DelayedAck of Software iSCSI adapter on " + $esx.name
+        }
     }
 }
 
@@ -243,30 +259,37 @@ esxcli storage nmp satp rule list
 
 Foreach($esx in $hostsToBeExecuted){
     $esxcliv2=Get-Esxcli -VMHost $esx -v2
-    $SatpArgs = $esxcliv2.storage.nmp.satp.rule.remove.createArgs()
-    $SatpArgs.description = "DATERA custom SATP Rule"
-    $SatpArgs.vendor = "DATERA"
-    $SatpArgs.satp = "VMW_SATP_ALUA"
-    $SatpArgs.psp = "VMW_PSP_RR"
-    $SatpArgs.pspoption = "iops=1"
-    $result=$esxcliv2.storage.nmp.satp.rule.add.invoke($SatpArgs)
+    if ($Confirm) {
+        $SatpArgs = $esxcliv2.storage.nmp.satp.rule.remove.createArgs()
+        $SatpArgs.description = "DATERA custom SATP Rule"
+        $SatpArgs.vendor = "DATERA"
+        $SatpArgs.satp = "VMW_SATP_ALUA"
+        $SatpArgs.psp = "VMW_PSP_RR"
+        $SatpArgs.pspoption = "iops=1"
+        $result=$esxcliv2.storage.nmp.satp.rule.add.invoke($SatpArgs)
 
-    If ($result){
-        Write-Output ("DATERA custom SATP rule [RR, iops=1] is created for " + $esx.name)
+        If ($result){
+            Write-Output ("DATERA custom SATP rule [RR, iops=1] is created for " + $esx.name)
+        }
     }
 }
 
-If ($verbose = $true){
-Write-Output "
+If ($Confirm) {
+    If ($verbose = $true){
+    Write-Output "
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !!                                                                !!
-    !!  Configuration changes take effect after rebooting ESXI hosts  !!
-    !!  Please move ESXi host to maintenance mode, then reboot them   !!
-    !!                                                                !!
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !!                                                                !!
+        !!  Configuration changes take effect after rebooting ESXI hosts  !!
+        !!  Please move ESXi host to maintenance mode, then reboot them   !!
+        !!                                                                !!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-"
+    "
+    }
+} Else {
+    Write-Output "No changes were made.  To make changes, re-run with -Confirm"
+
 }
 
 <# Result Looks like:
