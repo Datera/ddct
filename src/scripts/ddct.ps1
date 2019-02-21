@@ -50,9 +50,10 @@
 #>
 Using module dsdk
 
+[CmdletBinding()]
 Param(
     [Parameter(Mandatory=$false)]
-    [switch]$human = $false
+    [string]$vmware = ""
 )
 
 Set-StrictMode -Version Latest
@@ -74,13 +75,6 @@ $EXITCODE = 0
 function Add-Error {
     Param([Parameter(Mandatory=$true)] [Failures]$error_code)
     $script:EXITCODE += $error_code
-}
-
-function Write-Human {
-    Param([Parameter(Mandatory=$true)] [string]$output)
-    If ($human) {
-        Write-Output $output
-    }
 }
 
 $cfg = Get-UdcConfig
@@ -105,7 +99,7 @@ $cfg | Add-Member "vip_1" $vip1 -PassThru
 $cfg | Add-Member "vip_2" $vip2 -PassThru
 
 # Check Connections
-$conn_errs = @{
+$conn_errs = [ordered]@{
     "mgmt_ip" = [Failures]::FAILED_CONNECTION_MGMT;
     "vip_1" = [Failures]::FAILED_CONNECTION_VIP1;
     "vip_2" = [Failures]::FAILED_CONNECTION_VIP2
@@ -120,15 +114,15 @@ Function Test-Ip {
         [string]$ip
     )
     If ($ip -eq "") {
-        Write-Human "$name was not populated, skipping connection test"
+        Write-Verbose "$name was not populated, skipping connection test"
         continue
     }
-    Write-Human "Testing $name Connection"
+    Write-Verbose "Testing $name Connection"
     If (!(Test-Connection -Cn $ip -BufferSize 16 -Count 1 -ea 0 -quiet)) {
-        Write-Human "FAIL: Could not reach $ip, please check the connection"
+        Write-Verbose "FAIL: Could not reach $ip, please check the connection"
         Add-Error $conn_errs[$name]
     } Else {
-        Write-Human "SUCCESS"
+        Write-Verbose "SUCCESS"
     }
 
 }
@@ -139,54 +133,73 @@ Foreach ($k in $conn_errs.keys) {
 
 # Check MTU
 $mtu = 9000
-$mtu_errs = @{"mgmt_ip" = [Failures]::FAILED_MTU_MGMT;
+$mtu_errs = [ordered]@{"mgmt_ip" = [Failures]::FAILED_MTU_MGMT;
               "vip_1" = [Failures]::FAILED_MTU_VIP1;
               "vip_2" = [Failures]::FAILED_MTU_VIP2}
 Foreach ($k in $conn_errs.keys) {
     If ($cfg."$k" -eq "") {
-        Write-Human "$k was not populated, skipping MTU test"
+        Write-Verbose "$k was not populated, skipping MTU test"
         continue
     }
-    Write-Human "Testing $k MTU"
+    Write-Verbose "Testing $k MTU"
     If (!(ping $cfg."$k" -f -l $mtu)) {
-        Write-Human "Could not reach $($cfg.`"$k`"), with MTU of $mtu, please check MTU settings"
+        Write-Verbose "Could not reach $($cfg.`"$k`"), with MTU of $mtu, please check MTU settings"
         Add-Error $mtu_errs[$k]
     } Else {
-        Write-Human "SUCCESS"
+        Write-Verbose "SUCCESS"
     }
 }
 
 # Check ISCSI service
-Write-Human "Checking ISCSI Service"
+Write-Verbose "Checking ISCSI Service"
 $iscsi_enabled = (Get-Service MSiSCSI).Status -eq "Running"
 If (!$iscsi_enabled) {
-    Write-Human "FAIL: The MSiSCSI service is not running"
+    Write-Verbose "FAIL: The MSiSCSI service is not running"
     Add-Error ([Failures]::FAILED_ISCSI_SERVICE)
 } Else {
-    Write-Human "SUCCESS"
+    Write-Verbose "SUCCESS"
 }
 
 # Check Power Settings
-Write-Human "Checking Power Settings"
+Write-Verbose "Checking Power Settings"
 If (!(powercfg -l | Where-Object {$_.contains("High performance")} | Foreach-Object {$_.contains("*")})) {
-    Write-Human("Power settings are not set to 'High performance'")
+    Write-Verbose("Power settings are not set to 'High performance'")
     Add-Error ([Failures]::FAILED_POWER_SETTINGS)
 }
 
 # Check Receive Side Scaling
-Write-Human "Checking Recieve Side Scaling"
+Write-Verbose "Checking Recieve Side Scaling"
 $rssm = Get-NetAdapterRss * | Where-Object {$_.Enabled -eq $false} | Measure-Object
 If ($rssm.Count -ne 0) {
     Get-NetAdapterRss * | Where-Object {$_.Enabled -eq $false} | Foreach-Object {
-            Write-Human "Interface $_.Name does not have Receive Side Scaling enabled"
+            Write-Verbose "Interface $_.Name does not have Receive Side Scaling enabled"
         }
     Add-Error ([Failures]::FAILED_RSS)
 } Else {
-    Write-Human "SUCCESS"
+    Write-Verbose "SUCCESS"
 }
 
-Write-Human("Finished.  Status Code: $EXITCODE")
-If ($human) {
-    Write-Human [Failures]$EXITCODE
+$confirm = ""
+$allhosts = ""
+If ($vmware -ne "") {
+    $vargs = $vmware -Split ","
+    ForEach ($arg in $vargs) {
+        $k, $v = $($arg -Split "=")
+        $v = [System.Convert]::ToBoolean($v)
+        If (($k.ToLower() -eq "confirm") -and ($v)) {
+            $confirm = "-confirm"
+        } ElseIf (($k.ToLower() -eq "allhosts") -and ($v)) {
+            $allhosts = "-allhosts"
+        }
+    }
+    Write-Verbose "Running VMWare fixes"
+    Invoke-Expression "& $($PSScriptRoot + "\check_vmware.ps1") -confirm -allhosts"
+} Else {
+    Write-Verbose "Skipping VMWare fixes"
 }
+
+$vf = $vmware -ne ""
+Write-Verbose("Finished.  Status Code: $EXITCODE")
+Write-Verbose "Failed tests: $([Failures] "$EXITCODE")"
+Write-Verbose("Performed VMWare fixes: $vf $confirm $allhosts")
 exit $EXITCODE
