@@ -20,6 +20,7 @@ CONFIG = os.path.join(DIR, "datera-config.json")
 DDCT_TEMPLATE = """
 #!/bin/bash
 
+DSDK_LOG_CFG=disable
 {python} {ddct} $@
 """
 
