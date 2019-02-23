@@ -7,6 +7,7 @@ import subprocess
 from common import vprint, exe, exe_check, ff, check, parse_route_table, is_l3
 
 import ipaddress
+import socket
 
 MTU_RE = re.compile(r"^.*mtu (\d+) .*$")
 
@@ -23,7 +24,11 @@ iface_dict = {"MGMT": "mgt1",
 
 
 def get_interface_for_ip(ip):
-    ipobj = ipaddress.ip_address(str(ip))
+    try:
+        ipobj = ipaddress.ip_address(str(ip))
+    except ValueError:
+        ip = socket.gethostbyname(ip)
+        ipobj = ipaddress.ip_address(str(ip))
     rt = parse_route_table()
     for net, iface in rt:
         if ipobj in net:
