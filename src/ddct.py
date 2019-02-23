@@ -166,8 +166,8 @@ if __name__ == "__main__":
                                          parents=[top_parser])
     check_parser.set_defaults(func=checker)
 
-    fix_parser = subparsers.add_parser("fix", help="Run fixes")
-    fix_parser.set_defaults(func=fixer)
+    # fix_parser = subparsers.add_parser("fix", help="Run fixes")
+    # fix_parser.set_defaults(func=fixer)
 
     install_parser = subparsers.add_parser("install", help="Install things")
     install_parser.set_defaults(func=installer)
@@ -177,7 +177,7 @@ if __name__ == "__main__":
                                 help="Show version history")
 
     # Common arguments
-    for p in [check_parser, fix_parser, install_parser]:
+    for p in [check_parser, install_parser]:
         p.add_argument("-o", "--out", help="Output file.Will still print to "
                                            "stdout unless -q option is "
                                            "provided")
@@ -225,13 +225,13 @@ if __name__ == "__main__":
     check_parser.add_argument("-k", "--host-state", action="store_true",
                               help="Enable host-state output during check")
     # # Fix Parser Arguments
-    fix_parser.add_argument("-i", "--in-report", help="Report file location "
-                                                      "to read in")
-    fix_parser.add_argument("-d", "--codes", nargs="*", default=[],
-                            help="Used for specifying codes manually")
-    fix_parser.add_argument("-p", "--print-codes", action="store_true",
-                            help="Print out the tool's currently supported "
-                                 "fixes and codes")
+    # fix_parser.add_argument("-i", "--in-report", help="Report file location "
+    #                                                   "to read in")
+    # fix_parser.add_argument("-d", "--codes", nargs="*", default=[],
+    #                         help="Used for specifying codes manually")
+    # fix_parser.add_argument("-p", "--print-codes", action="store_true",
+    #                         help="Print out the tool's currently supported "
+    #                              "fixes and codes")
 
     # Install Parser Arguments
     pass
