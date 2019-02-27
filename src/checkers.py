@@ -33,6 +33,34 @@ def check_os(config):
                   "{}".format(SUPPORTED_OS_TYPES), "3C47368")
 
 
+@check("SYSCTL", "basic", "sysctl", "misc", "local")
+def check_sysctl(config):
+    vprint("Checking various sysctl settings")
+    settings = sorted([
+        ("net.ipv4.tcp_timestamps", "0", "F0D7A1AD"),
+        ("net.ipv4.tcp_sack", "1", "7A9AB850"),
+        ("net.core.netdev_max_backlog", "250000", "7656C46C"),
+        ("net.core.somaxconn", "1024", "34A7B822"),
+        ("net.core.rmem_max", "16777216", "4C4B3F0B"),
+        ("net.core.wmem_max", "16777216", "7F8479C2"),
+        ("net.core.rmem_default", "8388608", "FBCA17D5"),
+        ("net.core.wmem_default", "8388608", "68191DE5"),
+        ("net.core.optmem_max", "8388608", "8FA26A66"),
+        ("net.ipv4.tcp_rmem", "\"4096 87380 16777216\"", "2A6057BD"),
+        ("net.ipv4.tcp_wmem", "\"4096 65536 16777216\"", "CD37F436"),
+        ("net.ipv4.tcp_low_latency", "1", "6BE2899E"),
+        ("net.ipv4.tcp_fin_timeout", "15", "59FD5DF7"),
+        ("net.ipv4.tcp_syncookies", "1", "01C594E7"),
+        ("net.ipv4.tcp_adv_win_scale", "1", "1F523B04"),
+        ("net.ipv4.tcp_window_scaling", "1", "A8A6F381"),
+        ("net.ipv4.tcp_max_syn_backlog", "8192", "2862CB28"),
+        ("net.ipv4.tcp_tw_reuse", "1", "989229FC"),
+        ("net.ipv4.tcp_synack_retries", "2", "55EF997B")])
+    for setting, value, code in settings:
+        if exe("sysctl --values {}".format(setting)).strip() != value:
+            ff("{}={} is not set".format(setting, value), code)
+
+
 @check("ISCSI", "basic", "iscsi", "local")
 def check_iscsi(config):
     vprint("Checking ISCSI settings")
@@ -329,6 +357,7 @@ def callhome_check(config):
 
 check_list = [check_os,
               check_iscsi,
+              check_sysctl,
               check_udev,
               check_arp,
               check_irq,
