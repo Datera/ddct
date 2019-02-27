@@ -9,6 +9,7 @@ import threading
 
 from common import vprint, exe_check, ff, parse_mconf, get_os, check_load, exe
 from common import check, wf
+from common import ASSETS
 from mtu import load_checks as mtu_checks
 
 try:
@@ -17,10 +18,8 @@ except ImportError:
     tabulate = None
 
 SUPPORTED_OS_TYPES = ["ubuntu", "debian", "centos", "rhel"]
-FETCH_SO_URL = ("https://raw.githubusercontent.com/Datera/docker-driver/"
-                "master/scripts/assets/fetch_device_serial_no.sh")
-UDEV_URL = ("https://raw.githubusercontent.com/Datera/docker-driver/master/"
-            "scripts/assets/99-iscsi-luns.rules")
+FETCH_SO_URL = os.path.join(ASSETS, "fetch_device_serial_no.sh")
+UDEV_URL = os.path.join(ASSETS, "99-iscsi-luns.rules")
 
 NET_FIX = ("Check the network connection.  If this failure is intermittent "
            "check for duplicate ips.  This can also be due to MTU "

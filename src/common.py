@@ -37,6 +37,8 @@ try:
 except NameError:
     pass
 
+DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ASSETS = os.path.join(DIR, "assets")
 TAG_RE = re.compile("\d+\.\d+\.\d+")
 UUID4_STR_RE = re.compile("[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab]"
                           "[a-f0-9]{3}-?[a-f0-9]{12}")
