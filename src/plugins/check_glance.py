@@ -16,10 +16,10 @@ SITE_PACKAGE_INSTALL_2 = "/usr/local/lib/python2.7/site-packages/glance_store"
 DEVSTACK_INSTALL = "/usr/local/lib/python2.7/site-packages/glance_store"
 TAGS = "https://api.github.com/repos/Datera/glance-driver/tags"
 
-VERSION_RE = re.compile("^\s+VERSION = ['\"]v([\d\.]+)['\"]\s*$")
+VERSION_RE = re.compile(r"^\s+VERSION = ['\"]v([\d\.]+)['\"]\s*$")
 
-ETC_DEFAULT_RE = re.compile("^\[DEFAULT\]\s*$")
-ETC_SECTION_RE = re.compile("^\[glance_store\]\s*$")
+ETC_DEFAULT_RE = re.compile(r"^\[DEFAULT\]\s*$")
+ETC_SECTION_RE = re.compile(r"^\[glance_store\]\s*$")
 LOCATIONS = [PACKAGE_INSTALL, PACKAGE_INSTALL_2, SITE_PACKAGE_INSTALL,
              SITE_PACKAGE_INSTALL_2, DEVSTACK_INSTALL]
 
@@ -125,7 +125,7 @@ def check_glance_conf(config):
             return ff("[glance_store] section missing from {}".format(ETC),
                       "AFCBBDD7")
         dsection = []
-        section_match = re.compile("^\[.*\]")
+        section_match = re.compile(r"^\[.*\]")
         for line in f:
             if section_match.match(line):
                 break

@@ -17,10 +17,10 @@ SITE_PACKAGE_INSTALL_2 = "/usr/local/lib/python2.7/site-packages/cinder"
 DEVSTACK_INSTALL = "/opt/stack/cinder/cinder"
 TAGS = "https://api.github.com/repos/Datera/cinder-driver/tags"
 
-VERSION_RE = re.compile("^\s+VERSION = ['\"]([\d\.]+)['\"]\s*$")
+VERSION_RE = re.compile(r"^\s+VERSION = ['\"]([\d\.]+)['\"]\s*$")
 
-ETC_DEFAULT_RE = re.compile("^\[DEFAULT\]\s*$")
-ETC_SECTION_RE = re.compile("^\[[Dd]atera\]\s*$")
+ETC_DEFAULT_RE = re.compile(r"^\[DEFAULT\]\s*$")
+ETC_SECTION_RE = re.compile(r"^\[[Dd]atera\]\s*$")
 LOCATIONS = [PACKAGE_INSTALL, PACKAGE_INSTALL_2, SITE_PACKAGE_INSTALL,
              SITE_PACKAGE_INSTALL_2, DEVSTACK_INSTALL]
 
@@ -124,7 +124,7 @@ def check_cinder_volume_conf(config):
             return ff("[datera] section missing from "
                       "/etc/cinder/cinder.conf", "525BAAB0")
         dsection = []
-        section_match = re.compile("^\[.*\]")
+        section_match = re.compile(r"^\[.*\]")
         for line in f:
             if section_match.match(line):
                 break

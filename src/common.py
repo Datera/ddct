@@ -39,9 +39,9 @@ except NameError:
 
 DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASSETS = os.path.join(DIR, "assets")
-TAG_RE = re.compile("\d+\.\d+\.\d+")
-UUID4_STR_RE = re.compile("[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab]"
-                          "[a-f0-9]{3}-?[a-f0-9]{12}")
+TAG_RE = re.compile(r"\d+\.\d+\.\d+")
+UUID4_STR_RE = re.compile(r"[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab]"
+                          r"[a-f0-9]{3}-?[a-f0-9]{12}")
 
 INVISIBLE = re.compile(r"\x1b\[\d+[;\d]*m|\x1b\[\d*\;\d*\;\d*m")
 TMP_DIR = '/tmp/.ddct/'
@@ -115,17 +115,17 @@ FIX = "FIX {}"
 ISSUE = "ISSUE {}"
 
 
-CHECK_RE = re.compile(".*check_(.*)\.py")
+CHECK_RE = re.compile(r".*check_(.*)\.py")
 CHECK_GLOB = "check_*.py"
 
-FIX_RE = re.compile(".*fix_(.*)\.py")
+FIX_RE = re.compile(r".*fix_(.*)\.py")
 FIX_GLOB = "fix_*.py"
 
-INSTALL_RE = re.compile(".*install_(.*)\.py")
+INSTALL_RE = re.compile(r".*install_(.*)\.py")
 INSTALL_GLOB = "install_*.py"
 
 IP_ROUTE_RE = re.compile(
-    "^(?P<net>[\w|\.|:|/]+).*dev\s(?P<iface>[\w|\.|:]+).*?$")
+    r"^(?P<net>[\w|\.|:|/]+).*dev\s(?P<iface>[\w|\.|:]+).*?$")
 
 
 def _wraptxt(txt, fill):

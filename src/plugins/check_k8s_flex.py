@@ -6,9 +6,9 @@ import re
 from common import exe_check, exe, ff, wf, check
 
 
-KCTL_MA_RE = re.compile("Major:\"(\d+)\",")
-KCTL_MI_RE = re.compile("Minor:\"(\d+)\",")
-KPATH_RE = re.compile("path=(.*?) ;")
+KCTL_MA_RE = re.compile(r'Major:"(\d+)",')
+KCTL_MI_RE = re.compile(r'Minor:"(\d+)",')
+KPATH_RE = re.compile(r"path=(.*?) ;")
 
 SUPPORTED_MAJOR = 1
 SUPPORTED_MINOR = 6
