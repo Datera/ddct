@@ -76,6 +76,9 @@ def check_iscsi(config):
         ff("iscsid is not running.  Is the iscsid service running?",
            "EB22737E", fix=fix)
     ifile = "/etc/iscsi/iscsid.conf"
+    if not os.path.exists(ifile):
+        ff("iscsid configuration file does not exist", "C6F2B356")
+        return
     with io.open(ifile, 'r') as f:
         iconf = f.readlines()
     noopt = "node.session.timeo.noop_out_timeout"
