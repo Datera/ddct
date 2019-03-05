@@ -8,6 +8,7 @@ Datera Deployment Check Tool
 
 import argparse
 import curses
+import os
 import sys
 
 
@@ -240,6 +241,9 @@ if __name__ == "__main__":
     pass
 
     args = parser.parse_args()
+
+    if not args.verbose:
+        os.environ['DSDK_LOG_CFG'] = 'disable'
 
     if not scaffold:
         print("Please install requirements listed in requirements.txt")
