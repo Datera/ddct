@@ -21,7 +21,7 @@
     desired Datera DSP cluster.
 
     Run
-    C:\Users\Admin\Desktop\check_windows.ps1 -human
+    C:\Users\Admin\Desktop\check_windows.ps1 -verbose
     --------------
     Example Output
     --------------

@@ -79,8 +79,9 @@ def checker(args):
 
     config = get_config()
 
-    print("Using CONFIG:")
-    scaffold.print_config()
+    if not args.hide_config:
+        print("Using CONFIG:")
+        scaffold.print_config()
 
     if args.print_tags:
         print_tags(config, plugins=args.use_plugins)
@@ -187,6 +188,8 @@ if __name__ == "__main__":
                        help="Accepts a space separated list of plugins")
         p.add_argument("-l", "--list-plugins", action="store_true",
                        help="List available plugins")
+        p.add_argument('--hide-config', action="store_true",
+                       help="Don't print config to stdout when running")
 
     # Check Parser Arguments
     check_parser.add_argument("-w", "--disable-warnings", action="store_true",
