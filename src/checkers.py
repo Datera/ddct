@@ -340,6 +340,7 @@ def vip2_check(config):
     vip2 = config.get("vip2_ip")
     if not vip2:
         wf("No vip2_ip found", "16EB208B")
+        return
     if vip2 and not exe_check("ping -c 2 -W 1 {}".format(vip2), err=False):
         ff("Could not ping vip2 ip {}".format(vip2), "3D76CE5A", fix=NET_FIX)
     timeout = 5
