@@ -5,6 +5,7 @@ import re
 import subprocess
 
 from common import vprint, exe, exe_check, ff, check, parse_route_table, is_l3
+from common import wf
 
 import ipaddress
 import socket
@@ -118,7 +119,10 @@ def check_vip1(config):
 @check("VIP2 MTU", "connection", "local")
 def check_vip2(config):
     vprint("Checking vip2 interface mtu match")
-    vip2 = config['vip2_ip']
+    vip2 = config.get('vip2_ip')
+    if not vip2:
+        wf("No vip2_ip found", "416B534D")
+        return
     if is_l3:
         check_mtu_l3(vip2, config)
     else:
