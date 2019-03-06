@@ -8,6 +8,7 @@ Datera Deployment Check Tool
 
 import argparse
 import curses
+import io
 import os
 import sys
 
@@ -58,6 +59,26 @@ VERSION_HISTORY = """
 """
 
 
+DDCT_WARNING = """
+DDCT is provided without any warranty.  It is designed as a helper tool
+to ensure that the common settings needed for success during a Datera POC
+are set correctly on the system.
+
+If you have any questions about the tool, first consult the documentation
+at http://github.com/Datera/ddct.  If unable to find a solution there you
+can email mss@datera.io or file a bug for the issue in Jira.
+
+This tool is NOT a substitute for common sense.  If any of the report output
+does not make sense for your deployment, feel free to ignore it with better
+judgement.
+
+To disable this warning run ddct with the --wcs (with-common-sense) flag.
+This only needs to be done once.
+"""
+
+WCS = ".wcs"
+
+
 def version(args):
     if args.history:
         print(VERSION_HISTORY)
@@ -66,6 +87,14 @@ def version(args):
 
 def none(args):
     return
+
+
+def wcs():
+    return os.path.exists(WCS)
+
+
+def make_wcs():
+    io.open(WCS, 'w+').close()
 
 
 def checker(args):
@@ -191,6 +220,7 @@ if __name__ == "__main__":
                        help="List available plugins")
         p.add_argument('--hide-config', action="store_true",
                        help="Don't print config to stdout when running")
+        p.add_argument('--wcs', action="store_true")
 
     # Check Parser Arguments
     check_parser.add_argument("-w", "--disable-warnings", action="store_true",
@@ -251,4 +281,8 @@ if __name__ == "__main__":
 
     if not hasattr(args, 'func'):
         args.func = none
+    if not args.wcs and not wcs():
+        print(DDCT_WARNING)
+    else:
+        make_wcs()
     args.func(args)
