@@ -8,7 +8,7 @@ import uuid
 
 
 from common import vprint, exe, get_os, idempotent, fix_load, load_run_fixes
-from common import save_run_fixes
+from common import save_run_fixes, UBUNTU
 
 from tabulate import tabulate
 
@@ -102,7 +102,7 @@ def fix_irq_1():
 @idempotent
 def fix_cpufreq_1():
     """Installs cpufreq tooling packages"""
-    if get_os() == "ubuntu":
+    if get_os() == UBUNTU:
         # Install necessary headers and utils
         exe("apt-get install linux-tools-$(uname -r) "
             "linux-cloud-tools-$(uname -r) linux-tools-common -y")
@@ -119,7 +119,7 @@ def fix_cpufreq_2():
     # Update governor
     exe("cpupower frequency-set --governor performance")
     # Restart service
-    if get_os() == "ubuntu":
+    if get_os() == UBUNTU:
         exe("service cpufrequtils restart")
     else:
         exe("service cpupower restart")
@@ -153,7 +153,7 @@ def fix_block_devices_1():
     with io.open(grub, "w+") as f:
         print(data)
         f.writelines(data)
-    if get_os() == "ubuntu":
+    if get_os() == UBUNTU:
         exe("update-grub2")
     else:
         exe("grub2-mkconfig -o /boot/grub2/grub.cfg")
@@ -163,7 +163,7 @@ def fix_block_devices_1():
 def fix_multipath_1():
     """Installs multipath tooling packages"""
     vprint("Fixing multipath settings")
-    if get_os() == "ubuntu":
+    if get_os() == UBUNTU:
         exe("apt-get install multipath-tools -y")
     else:
         exe("yum install device-mapper-multipath -y")
@@ -172,7 +172,7 @@ def fix_multipath_1():
 @idempotent
 def fix_multipath_2():
     """Enables multipathd service"""
-    if get_os() == "ubuntu":
+    if get_os() == UBUNTU:
         exe("systemctl start multipath-tools")
         exe("systemctl enable multipath-tools")
     else:
@@ -189,7 +189,7 @@ def fix_multipath_conf_1():
         vprint("Found existing multipath.conf, moving to {}".format(bfile))
         shutil.copyfile(mfile, bfile)
     with io.open("/etc/multipath.conf", "w+") as f:
-        if get_os() == "ubuntu":
+        if get_os() == UBUNTU:
             f.write(MULTIPATH_CONF.replace("REPLACEME", "timer"))
         else:
             mconf = MULTIPATH_CONF.replace("REPLACEME", "timeout")

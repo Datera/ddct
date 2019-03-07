@@ -7,17 +7,19 @@ import sys
 import time
 import threading
 
-from common import vprint, exe_check, ff, parse_mconf, get_os, check_load, exe
+from common import vprint, exe_check, ff, get_os, check_load, exe
 from common import check, wf
-from common import ASSETS
+from common import ASSETS, SUPPORTED_OS_TYPES
+from common import UBUNTU
+from common import get_pkg_manager, APT, YUM
 from mtu import load_checks as mtu_checks
+from multipath import load_checks as multipath_checks
 
 try:
     from tabulate import tabulate
 except ImportError:
     tabulate = None
 
-SUPPORTED_OS_TYPES = ["ubuntu", "debian", "centos", "rhel"]
 FETCH_SO_URL = os.path.join(ASSETS, "fetch_device_serial_no.sh")
 UDEV_URL = os.path.join(ASSETS, "99-iscsi-luns.rules")
 
@@ -28,7 +30,8 @@ NET_FIX = ("Check the network connection.  If this failure is intermittent "
 
 @check("OS", "basic", "os", "local")
 def check_os(config):
-    if not get_os():
+    os = get_os()
+    if os not in SUPPORTED_OS_TYPES:
         return ff("Unsupported Operating System. Supported operating systems:"
                   "{}".format(SUPPORTED_OS_TYPES), "3C47368")
 
@@ -65,9 +68,9 @@ def check_sysctl(config):
 def check_iscsi(config):
     vprint("Checking ISCSI settings")
     if not exe_check("which iscsiadm"):
-        if get_os() == "ubuntu":
+        if get_pkg_manager() == APT:
             fix = "apt-get install open-iscsi"
-        elif get_os() == "centos":
+        elif get_pkg_manager() == YUM:
             fix = "yum install iscsi-initiator-utils"
         ff("iscsiadm is not available, has open-iscsi been installed?",
            "EFBB085C", fix=fix)
@@ -166,7 +169,7 @@ def check_irq(config):
 def check_cpufreq(config):
     vprint("Checking cpufreq settings")
     if not exe_check("which cpupower"):
-        if get_os() == "ubuntu":
+        if get_os() == UBUNTU:
             version = exe("uname -r").strip()
             fix = "apt-get install linux-tools-{}".format(version)
         else:
@@ -202,103 +205,6 @@ def check_block_devices(config):
             fix = ("Add 'elevator=noop' to /etc/default/grub in the "
                    "'GRUB_CMDLINE_LINUX_DEFAULT' line")
             return ff("Scheduler is not set to noop", "47BB5083", fix=fix)
-
-
-@check("Multipath", "basic", "multipath", "local")
-def check_multipath(config):
-    vprint("Checking multipath settings")
-    if not exe_check("which multipath", err=False):
-        ff("Multipath binary could not be found, is it installed?",
-           "2D18685C")
-    if not exe_check("which systemctl"):
-        if not exe_check("service multipathd status | grep 'Active: active'",
-                         err=False):
-            fix = "service multipathd start"
-            ff("multipathd not enabled", "541C10BF", fix=fix)
-    else:
-        if not exe_check("systemctl status multipathd | grep 'Active: active'",
-                         err=False):
-            fix = "systemctl start multipathd"
-            ff("multipathd not enabled", "541C10BF", fix=fix)
-
-
-@check("Multipath Conf", "basic", "multipath", "local")
-def check_multipath_conf(config):
-    mfile = "/etc/multipath.conf"
-    if not os.path.exists(mfile):
-        fix = "copy multipath.conf file from Datera deployment guide"
-        return ff("/etc/multipath.conf file not found", "1D506D89", fix=fix)
-    with io.open(mfile, 'r') as f:
-        mconf = parse_mconf(f.read())
-
-    # Check defaults section
-    defaults = filter(lambda x: x[0] == 'defaults', mconf)
-    fix = ("check the example multipath.conf file from Datera deployment"
-           "guide")
-    if not defaults:
-        ff("Missing defaults section", "1D8C438C", fix=fix)
-
-    else:
-        defaults = defaults[0]
-        if get_os() == "ubuntu":
-            ct = False
-            for d in defaults[1]:
-                if 'checker_timer' in d:
-                    ct = True
-            if not ct:
-                ff("defaults section missing 'checker_timer'",
-                   "FCFE3444", fix=fix)
-        else:
-            ct = False
-            for d in defaults[1]:
-                if 'checker_timeout' in d:
-                    ct = True
-            if not ct:
-                ff("defaults section missing 'checker_timeout'",
-                   "70191A9A", fix=fix)
-
-    # Check devices section
-    devices = filter(lambda x: x[0] == 'devices', mconf)
-    if not devices:
-        ff("Missing devices section", "797A6031", fix=fix)
-    else:
-        devices = devices[0][1]
-        dat_block = None
-        for _, device in devices:
-            ddict = {}
-            for entry in device:
-                ddict[entry[0]] = entry[1]
-            if ddict['vendor'] == 'DATERA':
-                dat_block = ddict
-        if not dat_block:
-            return ff("No DATERA device section found", "99B9D136", fix=fix)
-
-        if not dat_block['product'] == "IBLOCK":
-            ff("Datera 'product' entry should be \"IBLOCK\"", "A9DF3F8C",
-               fix=fix)
-
-    # Blacklist exceptions
-    be = filter(lambda x: x[0] == 'blacklist_exceptions', mconf)
-    if not be:
-        ff("Missing blacklist_exceptions section", "B8C8A19C")
-    else:
-        be = be[0][1]
-        dat_block = None
-        for _, device in be:
-            bdict = {}
-            for entry in device:
-                bdict[entry[0]] = entry[1]
-            if bdict['vendor'] == 'DATERA.*':
-                dat_block = bdict
-        if not dat_block:
-            ff("No Datera blacklist_exceptions section found",
-               "09E37E51", fix=fix)
-        if dat_block['vendor'] != 'DATERA.*':
-            ff("Datera blacklist_exceptions vendor entry malformed",
-               "9990F32F", fix=fix)
-        if dat_block['product'] != 'IBLOCK.*':
-            ff("Datera blacklist_exceptions product entry malformed",
-               "642753A0", fix=fix)
 
 
 @check("MGMT", "basic", "connection", "local")
@@ -369,13 +275,12 @@ check_list = [check_os,
               check_irq,
               check_cpufreq,
               check_block_devices,
-              check_multipath,
-              check_multipath_conf,
               mgmt_check,
               vip1_check,
               vip2_check,
               callhome_check]
 check_list.extend(mtu_checks())
+check_list.extend(multipath_checks())
 
 
 def load_plugin_checks(plugins):

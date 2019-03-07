@@ -21,11 +21,13 @@ from contextlib import contextmanager
 
 try:
     from dfs_sdk import scaffold, ApiError
+    import distro
     import ipaddress
     import paramiko
     import requests
     from tabulate import tabulate
 except ImportError:
+    distro = None
     ipaddress = None
     tabulate = None
     paramiko = None
@@ -46,6 +48,18 @@ UUID4_STR_RE = re.compile(r"[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab]"
 INVISIBLE = re.compile(r"\x1b\[\d+[;\d]*m|\x1b\[\d*\;\d*\;\d*m")
 TMP_DIR = '/tmp/.ddct/'
 FIXES_FILE = os.path.join(TMP_DIR, 'fixes_run')
+
+UBUNTU = "ubuntu"
+DEBIAN = "debian"
+CENTOS = "centos"
+CENTOS7 = "centos7"
+CENTOS6 = "centos6"
+RHEL = "rhel"
+
+APT = "apt"
+YUM = "yum"
+
+SUPPORTED_OS_TYPES = [UBUNTU, DEBIAN, CENTOS7, CENTOS6, RHEL]
 
 
 def get_config():
@@ -427,11 +441,22 @@ def parse_mconf(data):
     return _helper(iter(data.splitlines()))
 
 
-def get_os():
+def get_pkg_manager():
     if exe_check("which apt-get > /dev/null 2>&1", err=False):
-        return "ubuntu"
+        return APT
     if exe_check("which yum > /dev/null 2>&1", err=False):
-        return "centos"
+        return YUM
+
+
+def get_os():
+    did = distro.id()
+    if did == CENTOS:
+        version = distro.version()
+        if version.startswith("7"):
+            return CENTOS7
+        elif version.startswith("6"):
+            return CENTOS6
+    return did
 
 
 def _lookup_vars():
