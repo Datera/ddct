@@ -3,7 +3,17 @@ from __future__ import (print_function, unicode_literals, division,
 import io
 import os
 
-from common import vprint, parse_mconf, check, exe_check, ff
+from common import vprint, parse_mconf, check, exe_check, ff, wf, get_os
+from common import ASSETS, UBUNTU, CENTOS6, CENTOS7
+
+
+CENTOS6_CONF = os.path.join(ASSETS, "centos6.mconf")
+CENTOS7_CONF = os.path.join(ASSETS, "centos7.mconf")
+UBUNTU_CONF = os.path.join(ASSETS, "ubuntu.mconf")
+
+CONFS = {CENTOS6: CENTOS6_CONF,
+         CENTOS7: CENTOS7_CONF,
+         UBUNTU: UBUNTU_CONF}
 
 
 @check("Multipath", "basic", "multipath", "local")
@@ -26,9 +36,14 @@ def check_multipath(config):
 
 @check("Multipath Conf", "basic", "multipath", "local")
 def check_multipath_conf(config):
+    dist = get_os()
+    vfile = CONFS.get(dist)
+    if not vfile:
+        wf("No supported multipath.conf file for: {}".format(dist), "381CE248")
     mfile = "/etc/multipath.conf"
     if not os.path.exists(mfile):
-        fix = "copy multipath.conf file from Datera deployment guide"
+        fix = ("copy multipath.conf file from Datera deployment guide or"
+               " the {} folder on your system".format(ASSETS))
         return ff("/etc/multipath.conf file not found", "1D506D89", fix=fix)
     with io.open(mfile, 'r') as f:
         mconf = parse_mconf(f.read())

@@ -13,8 +13,6 @@ devices {
            path_selector "queue-length 0"
            hardware_handler "1 alua"
            failback 5
-           #no_path_retry 24
-           #rr_min_io 10
    }
 }
 
