@@ -42,8 +42,10 @@ def check_multipath_conf(config):
         wf("No supported multipath.conf file for: {}".format(dist), "381CE248")
     mfile = "/etc/multipath.conf"
     if not os.path.exists(mfile):
-        fix = ("copy multipath.conf file from Datera deployment guide or"
-               " the {} folder on your system".format(ASSETS))
+        if not vfile:
+            fix = "copy a multipath.conf file from the Datera Deployment Guide"
+        else:
+            fix = "copy {} to /etc/multipath.conf".format(vfile)
         return ff("/etc/multipath.conf file not found", "1D506D89", fix=fix)
     with io.open(mfile, 'r') as f:
         mconf = parse_mconf(f.read())
