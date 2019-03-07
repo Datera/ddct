@@ -60,8 +60,16 @@ def check_sysctl(config):
         ("net.ipv4.tcp_tw_reuse", "1", "989229FC"),
         ("net.ipv4.tcp_synack_retries", "2", "55EF997B")])
     for setting, value, code in settings:
-        if exe("sysctl --values {}".format(setting)).strip() != value:
-            ff("{}={} is not set".format(setting, value), code)
+        found = exe("sysctl --values {}".format(setting)).strip()
+        found = found.strip().strip("\"").split()
+        value = value.strip().strip("\"").split()
+        if len(found) == 1:
+            found = found[0]
+        if len(value) == 1:
+            value = value[0]
+        if found != value:
+            ff("{}={} is not set. Found: {}".format(
+                setting, value, found), code)
 
 
 @check("ISCSI", "basic", "iscsi", "local")
