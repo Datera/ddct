@@ -55,11 +55,13 @@ CENTOS = "centos"
 CENTOS7 = "centos7"
 CENTOS6 = "centos6"
 RHEL = "rhel"
+SLES = "sles"
 
 APT = "apt"
 YUM = "yum"
+ZYP = "zypper"
 
-SUPPORTED_OS_TYPES = {UBUNTU, DEBIAN, CENTOS7, CENTOS6, RHEL}
+SUPPORTED_OS_TYPES = {UBUNTU, DEBIAN, CENTOS7, CENTOS6, RHEL, SLES}
 
 
 def get_config():

@@ -4,16 +4,18 @@ import io
 import os
 
 from common import vprint, parse_mconf, check, exe_check, ff, wf, get_os
-from common import ASSETS, UBUNTU, CENTOS6, CENTOS7
+from common import ASSETS, UBUNTU, CENTOS6, CENTOS7, SLES
 
 
 CENTOS6_CONF = os.path.join(ASSETS, "centos6.mconf")
 CENTOS7_CONF = os.path.join(ASSETS, "centos7.mconf")
 UBUNTU_CONF = os.path.join(ASSETS, "ubuntu.mconf")
+SLES_CONF = os.path.join(ASSETS, "sles.mconf")
 
 CONFS = {CENTOS6: CENTOS6_CONF,
          CENTOS7: CENTOS7_CONF,
-         UBUNTU: UBUNTU_CONF}
+         UBUNTU: UBUNTU_CONF,
+         SLES: SLES_CONF}
 
 
 @check("Multipath", "basic", "multipath", "local")

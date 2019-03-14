@@ -32,8 +32,8 @@ NET_FIX = ("Check the network connection.  If this failure is intermittent "
 def check_os(config):
     os = get_os()
     if os not in SUPPORTED_OS_TYPES:
-        return ff("Unsupported Operating System. Supported operating systems:"
-                  "{}".format(SUPPORTED_OS_TYPES), "3C47368")
+        return ff("Unsupported Operating System. Supported operating systems: "
+                  "{}".format(list(SUPPORTED_OS_TYPES)), "3C47368")
 
 
 @check("SYSCTL", "basic", "sysctl", "misc", "local")
