@@ -42,8 +42,23 @@ TBD
 Usage
 -----
 
-To perform basic readiness checks:
+*NOTE*: If running on SUSE Linux Enterprise Server 12 (SLES) you MUST register
+the normal SLES repositories as well as the Software Development Kit (SDK)
+repositories.
 
+You can check if they are registered with the following:
+```
+$ zypper refresh
+$ zypper lr --show-enabled-only | grep -iE "(enterprise_server|software)" | awk '{print $3}'
+SUSE_Linux_Enterprise_Server_12_SP3_x86_64:SLES12-SP3-Debuginfo-Updates
+SUSE_Linux_Enterprise_Server_12_SP3_x86_64:SLES12-SP3-Pool
+SUSE_Linux_Enterprise_Server_12_SP3_x86_64:SLES12-SP3-Updates
+SUSE_Linux_Enterprise_Software_Development_Kit_12_SP3_x86_64:SLE-SDK12-SP3-Debuginfo-Updates
+SUSE_Linux_Enterprise_Software_Development_Kit_12_SP3_x86_64:SLE-SDK12-SP3-Pool
+SUSE_Linux_Enterprise_Software_Development_Kit_12_SP3_x86_64:SLE-SDK12-SP3-Updates
+```
+
+To install DDCT to perform basic readiness checks
 ```
 # Clone the repository
 $ git clone http://github.com/Datera/ddct
