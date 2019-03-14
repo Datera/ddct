@@ -65,15 +65,23 @@ def install_packages():
             vprint(e)
             print("RHEL packages failed, trying SUSE packages")
             try:
-                exe("sudo zypper install python-setuptools "
-                    "python-devel, libffi-devel opennssl-devel gcc -y")
-                exe("sudo easy_install pip")
-                exe("sudo pip install virtualenv")
+                exe("sudo zypper install -y python-setuptools libffi-devel "
+                    "python-curses gcc")
+                # For some reason this has to be a separate call
+                exe("sudo zypper install -y python-devel")
+                install_virtualenv_from_source()
             except subprocess.CalledProcessError as e:
                 vprint(e)
                 print("SUSE packages failed")
                 print("Could not install prereqs")
-            return 1
+                return 1
+
+
+def install_virtualenv_from_source():
+    exe("curl --location --output virtualenv-16.4.3.tar.gz "
+        "https://github.com/pypa/virtualenv/tarball/16.4.3")
+    exe("tar zxvf virtualenv-16.4.3.tar.gz")
+    exe("python pypa-virtualenv-3272f7b/virtualenv.py .ddct")
 
 
 def main(args):
