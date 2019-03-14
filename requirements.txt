@@ -5,4 +5,5 @@ six
 tabulate
 distro
 psutil
+ruamel.yaml
 git+http://github.com/Datera/python-sdk

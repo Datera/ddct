@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from __future__ import unicode_literals, print_function, division
 
@@ -66,8 +66,9 @@ def install_packages():
             print("RHEL packages failed, trying SUSE packages")
             try:
                 exe("sudo zypper install python-setuptools "
-                    "python-virtualenv python-devel, libffi-devel"
-                    "opennssl-devel gcc -y")
+                    "python-devel, libffi-devel opennssl-devel gcc -y")
+                exe("sudo easy_install pip")
+                exe("sudo pip install virtualenv")
             except subprocess.CalledProcessError as e:
                 vprint(e)
                 print("SUSE packages failed")
