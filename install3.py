@@ -78,9 +78,10 @@ def install_packages():
 
 
 def install_virtualenv_from_source():
-    exe("curl --location --output virtualenv-16.4.3.tar.gz "
-        "https://github.com/pypa/virtualenv/tarball/16.4.3")
-    exe("tar zxvf virtualenv-16.4.3.tar.gz")
+    if not os.path.exists("pypa-virtualenv-3272f7b"):
+        exe("curl --location --output virtualenv-16.4.3.tar.gz "
+            "https://github.com/pypa/virtualenv/tarball/16.4.3")
+        exe("tar zxvf virtualenv-16.4.3.tar.gz")
     exe("python pypa-virtualenv-3272f7b/virtualenv.py .ddct")
 
 
