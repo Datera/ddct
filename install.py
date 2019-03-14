@@ -65,8 +65,8 @@ def install_packages():
             vprint(e)
             print("RHEL packages failed, trying SUSE packages")
             try:
-                exe("sudo zypper install python-setuptools "
-                    "python-devel, libffi-devel opennssl-devel gcc -y")
+                exe("sudo zypper install -y python-setuptools "
+                    "libffi-devel gcc")
                 install_virtualenv_from_source()
             except subprocess.CalledProcessError as e:
                 vprint(e)
