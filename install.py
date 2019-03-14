@@ -65,7 +65,8 @@ def install_packages():
             vprint(e)
             print("RHEL packages failed, trying SUSE packages")
             try:
-                exe("sudo zypper install -y python-setuptools gcc")
+                exe("sudo zypper install -y python-setuptools libffi-devel "
+                    "gcc")
                 # For some reason this has to be a separate call
                 exe("sudo zypper install -y python-devel")
                 install_virtualenv_from_source()
