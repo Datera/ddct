@@ -4,11 +4,12 @@ from __future__ import (print_function, unicode_literals, division,
 import re
 
 from common import exe_check, exe, ff, check
+from k8s_yaml import get_k8s_yaml
 
 
-KCTL_MA_RE = re.compile("Major:\"(\d+)\",")
-KCTL_MI_RE = re.compile("Minor:\"(\d+)\",")
-KPATH_RE = re.compile("path=(.*?) ;")
+KCTL_MA_RE = re.compile(r"Major:\"(\d+)\",")
+KCTL_MI_RE = re.compile(r"Minor:\"(\d+)\",")
+KPATH_RE = re.compile(r"path=(.*?) ;")
 
 SUPPORTED_MAJOR = 1
 SUPPORTED_MINOR = 13
@@ -87,5 +88,31 @@ def check_kubernetes_driver_csi(config):
         ff("At least one Node pod not found", "2FD6A7B4")
 
 
+@check("K8S CSI YAML", "driver", "plugin", "local", "csi", "config")
+def check_csi_yaml(config):
+    yml = config.get('csi-yaml')
+    if not yml:
+        ff("In order to perform the CSI yaml check you must provide the yaml"
+           " file location with the '--csi-yaml' argument", "1C84788A")
+        return
+    entries = get_k8s_yaml(yml)
+    nodes = entries['nodes']
+    controller = entries['controller']
+
+    for k1, k2, fc1, fc2 in (('DAT_MGMT', 'mgmt_ip', "A4CEE995", "D520EF2E"),
+                             ('DAT_USER', 'username', "4FAC9E6F", "FA4AD639"),
+                             ('DAT_PASS', 'password', "3F37E06E", "F6B7A8FE")):
+
+        if nodes[k1] != config[k2]:
+            ff("CSI 'node' service environment variable {} does not match "
+               "UDC config.  [{} != {}]".format(
+                   k1, nodes[k1], config[k2]), fc1)
+        if controller[k1] != config[k2]:
+            ff("CSI 'controller' service environment variable DAT_MGMT does "
+               "not match UDC config.  [{} != {}]".format(
+                   k1, controller[k1], config[k2]), fc2)
+
+
 def load_checks():
-    return [check_kubernetes_driver_csi]
+    return [check_kubernetes_driver_csi,
+            check_csi_yaml]

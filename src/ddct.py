@@ -108,6 +108,7 @@ def checker(args):
         sys.exit(0)
 
     config = get_config()
+    config['csi-yaml'] = args.csi_yaml
 
     if not args.hide_config:
         print("Using CONFIG:")
@@ -258,6 +259,9 @@ if __name__ == "__main__":
                                    "in callhome")
     check_parser.add_argument("-k", "--host-state", action="store_true",
                               help="Enable host-state output during check")
+    check_parser.add_argument("--csi-yaml",
+                              help="CSI yaml file to use with k8s_csi plugin"
+                                   " checks")
     # # Fix Parser Arguments
     # fix_parser.add_argument("-i", "--in-report", help="Report file location "
     #                                                   "to read in")
