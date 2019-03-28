@@ -69,7 +69,6 @@ def install_packages():
                     "python-curses gcc")
                 # For some reason this has to be a separate call
                 exe("sudo zypper install -y python-devel")
-                install_virtualenv_from_source()
             except subprocess.CalledProcessError as e:
                 vprint(e)
                 print("SUSE packages failed")
@@ -102,7 +101,7 @@ def main(args):
             # necessary packages just to be safe.
             if install_packages() == 1:
                 return 1
-            exe("virtualenv {}".format(VENV))
+            install_virtualenv_from_source()
     exe_pip("install -U pip")
     exe_pip("install -U -r {}".format(REQUIREMENTS))
 
