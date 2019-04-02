@@ -66,7 +66,7 @@ are set correctly on the system.
 
 If you have any questions about the tool, first consult the documentation
 at http://github.com/Datera/ddct.  If unable to find a solution there you
-can email mss@datera.io or file a bug for the issue in Jira.
+can email support@datera.io.
 
 This tool is NOT a substitute for common sense.  If any of the report output
 does not make sense for your deployment, feel free to ignore it with better
