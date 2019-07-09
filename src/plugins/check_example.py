@@ -67,6 +67,11 @@ ensure this test is affected by filters like the following:
 
     # Run only tests without the "network" tag
     $ ./ddct check --not-tags network
+
+The "config" parameter passed each decorated "check" function is a UDC
+dictionary with 'vip1_ip' key representing the first access VIP on the Datera
+box and a potential 'vip2_ip' key which is only present if the Datera box is
+configured with a second access VIP.
 """
 
 from common import exe_check, exe, wf, ff, check
